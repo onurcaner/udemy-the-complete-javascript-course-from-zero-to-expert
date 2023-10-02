@@ -70,7 +70,9 @@ const domElements = {
   toFixed: 2,
 
   containerApp: document.querySelector('.app'),
+
   containerMovements: document.querySelector('.movements'),
+  buttonSortMovements: document.querySelector('.btn--sort'),
 
   labelWelcome: document.querySelector('.welcome'),
   labelBalance: document.querySelector('.balance__value'),
@@ -86,7 +88,14 @@ const domElements = {
   inputTransferAmount: document.querySelector('.form__input--amount'),
   inputTransferButton: document.querySelector('.form__btn--transfer'),
 
-  // container methods
+  inputLoanAmount: document.querySelector('.form__input--loan-amount'),
+  inputLoanButton: document.querySelector('.form__btn--loan'),
+
+  inputCloseUsername: document.querySelector('.form__input--user'),
+  inputClosePin: document.querySelector('.form__input--pin'),
+  inputCloseButton: document.querySelector('.form__btn--close'),
+
+  // app methods
   showApp(isShow) {
     if (isShow) {
       this.containerApp.classList.remove('app--hidden');
@@ -99,16 +108,15 @@ const domElements = {
     }
   },
 
-  refreshMovements(movements) {
+  // movement methods
+  changeMovements(movements) {
     this.containerMovements.innerHTML = '';
     movements.forEach((movement, i) => {
       const movementType = movement > 0 ? 'deposit' : 'withdrawal';
       const TODOOO = '<div class="movements__date">3 days ago</div>';
       const htmlTemplate = `
         <div class="movements__row">
-          <div class="movements__type movements__type--${movementType}">${
-        i + 1
-      } ${movementType}</div>
+          <div class="movements__type movements__type--${movementType}">${movementType}</div>
           <div class="movements__value">${movement.toFixed(this.toFixed)}€</div>
         </div>
       `;
@@ -116,24 +124,28 @@ const domElements = {
     });
   },
 
+  changeSortButton(message) {
+    this.buttonSortMovements.textContent = `↓ ${message.toUpperCase()}`;
+  },
+
   // label methods
-  refreshWelcomeMessage(message) {
+  changeWelcomeMessage(message) {
     this.labelWelcome.textContent = message ?? 'Log in to get started';
   },
 
-  refreshBalance(balance) {
+  changeBalance(balance) {
     this.labelBalance.textContent = `${balance.toFixed(this.toFixed)}€`;
   },
 
-  refreshSummaryIn(totalDeposit) {
+  changeSummaryIn(totalDeposit) {
     this.labelSummaryIn.textContent = `${totalDeposit.toFixed(this.toFixed)}€`;
   },
-  refreshSummaryOut(totalWithdrawal) {
+  changeSummaryOut(totalWithdrawal) {
     this.labelSummaryOut.textContent = `${Math.abs(totalWithdrawal).toFixed(
       this.toFixed
     )}€`;
   },
-  refreshSummaryInterest(interest) {
+  changeSummaryInterest(interest) {
     this.labelSummaryInterest.textContent = `${interest.toFixed(
       this.toFixed
     )}€`;
@@ -175,16 +187,45 @@ const domElements = {
     this.inputTransferAmount.blur();
   },
 
+  // loan methods
+  getLoanAmount() {
+    return this.inputLoanAmount.value;
+  },
+  clearLoanFields() {
+    //(s) is silent :)
+    this.inputLoanAmount.value = '';
+  },
+  blurLoanFields() {
+    //(s) is silent :)
+    this.inputLoanAmount.blur();
+  },
+
+  // close methods
+  getCloseUsername() {
+    return this.inputCloseUsername.value;
+  },
+  getClosePin() {
+    return this.inputClosePin.value;
+  },
+  clearCloseFields() {
+    this.inputCloseUsername.value = '';
+    this.inputClosePin.value = '';
+  },
+  blurCloseFields() {
+    this.inputCloseUsername.blur();
+    this.inputClosePin.blur();
+  },
+
   // total refresh
   refreshSecretAccountDomElements(secretAccount) {
     if (!secretAccount) return this.showApp.call(this, false);
 
-    this.refreshMovements.call(this, secretAccount.getMovements());
-    this.refreshBalance.call(this, secretAccount.getNetBalance());
-    this.refreshSummaryIn.call(this, secretAccount.getTotalDeposit());
-    this.refreshSummaryOut.call(this, secretAccount.getTotalWithdrawal());
-    this.refreshSummaryInterest.call(this, secretAccount.getTotalInterest());
-    this.refreshWelcomeMessage.call(
+    this.changeMovements.call(this, secretAccount.getMovements());
+    this.changeBalance.call(this, secretAccount.getNetBalance());
+    this.changeSummaryIn.call(this, secretAccount.getTotalDeposit());
+    this.changeSummaryOut.call(this, secretAccount.getTotalWithdrawal());
+    this.changeSummaryInterest.call(this, secretAccount.getTotalInterest());
+    this.changeWelcomeMessage.call(
       this,
       `Welcome back ${secretAccount.getOwner().split(' ')[0]}!`
     );
@@ -218,10 +259,13 @@ const accountPublicMethods = {
     this.movements.push(amount);
   },
   getMovements() {
-    return this.movements;
+    return this.movements.slice();
   },
   getUsername() {
     return this.username;
+  },
+  getPin() {
+    return this.pin;
   },
 
   getTotalDeposit() {
@@ -284,7 +328,6 @@ const handleLogin = function (e) {
 
   // login
   secretAccount = signIn(testAccount, accountPublicMethods);
-  console.log(secretAccount);
 
   // render dom
   domElements.refreshSecretAccountDomElements(secretAccount);
@@ -307,14 +350,13 @@ const handleLogout = function (e) {
   secretAccount = undefined;
   domElements.refreshSecretAccountDomElements(secretAccount);
   domElements.changeLoginArrowDirection('right');
-  console.log('LOGOUT');
 
   // switch click event on button
   this.removeEventListener('click', handleLogout);
   this.addEventListener('click', handleLogin);
 };
 
-const handleTransferingMoney = function (e) {
+const handleMoneyTransfer = function (e) {
   e.preventDefault();
 
   // create an object containing transfer information
@@ -332,38 +374,182 @@ const handleTransferingMoney = function (e) {
   domElements.clearTransferFields();
   domElements.blurTransferFields();
 
-  // check input sanity
+  // test input sanity and requirements
   const targetAccount = accounts.find(
     (account) => account.username === moneyTransfer.to
   );
   if (
-    !targetAccount ||
     !secretAccount ||
+    !targetAccount ||
     moneyTransfer.amount < 0 ||
     moneyTransfer.amount + moneyTransfer.transferFee >
-      secretAccount?.getNetBalance()
+      secretAccount.getNetBalance()
   )
     return;
 
-  // tranfer the money
-  setTimeout(() => {
-    secretAccount?.addMovement(
+  // transfer the money
+  const helperTranfer = () => {
+    secretAccount.addMovement(
       -1 * (moneyTransfer.amount + moneyTransfer.transferFee)
     );
     targetAccount.movements.push(moneyTransfer.amount);
-  }, 1000);
+  };
 
-  // render the new elements
+  // render the changes
+  const helperRender = () => {
+    domElements.changeMovements(secretAccount.getMovements());
+    domElements.changeBalance(secretAccount.getNetBalance());
+  };
+
+  // simulate server delay
   setTimeout(() => {
-    domElements.refreshMovements(secretAccount?.getMovements());
-    domElements.refreshBalance(secretAccount?.getNetBalance());
-  }, 1001);
+    helperTranfer();
+    helperRender();
+  }, 1000);
+};
+
+const handleLoanRequest = function (e) {
+  e.preventDefault();
+
+  // create an object containing input fields
+  const loanRequest = {
+    amount: Number(domElements.getLoanAmount()),
+  };
+
+  // clear input fields for preventing rapid successions
+  domElements.clearLoanFields();
+  domElements.blurLoanFields();
+
+  // test requirements
+  if (
+    !secretAccount ||
+    !secretAccount
+      .getMovements()
+      .some((movement) => movement >= loanRequest.amount) ||
+    accounts
+      .flatMap((account) => account.movements)
+      .reduce((sum, movemet) => sum + movemet) <
+      loanRequest.amount * 10
+  )
+    return;
+
+  // transfer loan to account
+  const helperLoan = () => {
+    secretAccount.addMovement(loanRequest.amount);
+  };
+
+  // render changes
+  const helperRender = () => {
+    domElements.changeMovements(secretAccount.getMovements());
+    domElements.changeBalance(secretAccount.getNetBalance());
+    domElements.changeSummaryIn(secretAccount.getTotalDeposit());
+    domElements.changeSummaryInterest(secretAccount.getTotalInterest());
+  };
+
+  // simulate server delay
+  setTimeout(() => {
+    helperLoan();
+    helperRender();
+  }, 1000);
+};
+
+const handleClosingAccount = function (e) {
+  e.preventDefault();
+
+  // create an object containing input fields
+  const closeAccount = {
+    username: domElements.getCloseUsername(),
+    pin: Number(domElements.getClosePin()),
+  };
+
+  // clear input fields for preventing rapid successions
+  domElements.clearCloseFields();
+  domElements.blurCloseFields();
+
+  // test logged user and input fields equality
+  if (
+    !secretAccount ||
+    secretAccount.getUsername() !== closeAccount.username ||
+    secretAccount.getPin() !== closeAccount.pin
+  )
+    return;
+
+  // find the corresponding account and delete it
+  const helperDeleteAccount = () => {
+    accounts.splice(
+      accounts.findIndex(
+        (account) => account.username === closeAccount.username
+      ),
+      1
+    );
+    secretAccount = undefined;
+  };
+
+  // render the changes
+  const helperRender = () => {
+    // hide app
+    domElements.showApp(false);
+
+    // reset app
+    domElements.changeWelcomeMessage('Log in to get started');
+    domElements.refreshSecretAccountDomElements(secretAccount);
+
+    // change login button event handler
+    domElements.inputLoginButton.removeEventListener('click', handleLogout);
+    domElements.inputLoginButton.addEventListener('click', handleLogin);
+    domElements.changeLoginArrowDirection('right');
+  };
+
+  // simulate server delay
+  setTimeout(() => {
+    helperDeleteAccount();
+    helperRender();
+  }, 1000);
+};
+
+const handleSortingMovements = function (e) {
+  e.preventDefault();
+
+  // test requirements
+  if (!secretAccount) return;
+
+  // fetch sorting
+  const sortingType = this.textContent.slice(2).toLowerCase();
+  const sortedMovements = secretAccount.getMovements().slice();
+
+  switch (sortingType) {
+    case 'highest':
+      sortedMovements.sort((a, b) => a - b);
+      break;
+    case 'lowest':
+      sortedMovements.sort((a, b) => b - a);
+      break;
+    case 'amount':
+      sortedMovements.sort((a, b) => Math.abs(a) - Math.abs(b));
+      break;
+    case 'recent':
+    default:
+      break;
+  }
+
+  // render changes
+  const nextSortingType = {
+    highest: 'lowest',
+    lowest: 'amount',
+    amount: 'recent',
+    recent: 'highest',
+  };
+  domElements.changeSortButton(nextSortingType[sortingType] || 'highest');
+  domElements.changeMovements(sortedMovements);
 };
 
 // Initialization /////////////////////////////////////////////////////////////
 accounts.forEach(createUsername);
 domElements.inputLoginButton.addEventListener('click', handleLogin);
-domElements.inputTransferButton.addEventListener(
+domElements.inputTransferButton.addEventListener('click', handleMoneyTransfer);
+domElements.inputLoanButton.addEventListener('click', handleLoanRequest);
+domElements.inputCloseButton.addEventListener('click', handleClosingAccount);
+domElements.buttonSortMovements.addEventListener(
   'click',
-  handleTransferingMoney
+  handleSortingMovements
 );
