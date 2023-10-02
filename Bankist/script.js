@@ -62,16 +62,45 @@ const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
 ///////////////////////////////////////////////////////////////////////////////
+//
+///////////////////////////////////////////////////////////////////////////////
+
 // Elements ///////////////////////////////////////////////////////////////////
 const domElements = {
-  movements: document.querySelector('.movements'),
-  balance: document.querySelector('.balance__value'),
-  summaryIn: document.querySelector('.summary__value--in'),
-  summaryOut: document.querySelector('.summary__value--out'),
-  summaryInterest: document.querySelector('.summary__value--interest'),
+  toFixed: 2,
+
+  containerApp: document.querySelector('.app'),
+  containerMovements: document.querySelector('.movements'),
+
+  labelWelcome: document.querySelector('.welcome'),
+  labelBalance: document.querySelector('.balance__value'),
+  labelSummaryIn: document.querySelector('.summary__value--in'),
+  labelSummaryOut: document.querySelector('.summary__value--out'),
+  labelSummaryInterest: document.querySelector('.summary__value--interest'),
+
+  inputLoginUsername: document.querySelector('.login__input--user'),
+  inputLoginPin: document.querySelector('.login__input--pin'),
+  inputLoginButton: document.querySelector('.login__btn'),
+
+  inputTransferTo: document.querySelector('.form__input--to'),
+  inputTransferAmount: document.querySelector('.form__input--amount'),
+  inputTransferButton: document.querySelector('.form__btn--transfer'),
+
+  // container methods
+  showApp(isShow) {
+    if (isShow) {
+      this.containerApp.classList.remove('app--hidden');
+      setTimeout(() => this.containerApp.classList.add('app--opaque'));
+    } else {
+      this.containerApp.classList.remove('app--opaque');
+      setTimeout(() => {
+        this.containerApp.classList.add('app--hidden');
+      }, 1000);
+    }
+  },
 
   refreshMovements(movements) {
-    this.movements.innerHTML = '';
+    this.containerMovements.innerHTML = '';
     movements.forEach((movement, i) => {
       const movementType = movement > 0 ? 'deposit' : 'withdrawal';
       const TODOOO = '<div class="movements__date">3 days ago</div>';
@@ -80,31 +109,101 @@ const domElements = {
           <div class="movements__type movements__type--${movementType}">${
         i + 1
       } ${movementType}</div>
-          <div class="movements__value">${movement}€</div>
+          <div class="movements__value">${movement.toFixed(this.toFixed)}€</div>
         </div>
       `;
-      this.movements.insertAdjacentHTML('afterbegin', htmlTemplate);
+      this.containerMovements.insertAdjacentHTML('afterbegin', htmlTemplate);
     });
   },
 
+  // label methods
+  refreshWelcomeMessage(message) {
+    this.labelWelcome.textContent = message ?? 'Log in to get started';
+  },
+
   refreshBalance(balance) {
-    this.balance.textContent = `${balance}€`;
+    this.labelBalance.textContent = `${balance.toFixed(this.toFixed)}€`;
   },
 
   refreshSummaryIn(totalDeposit) {
-    this.summaryIn.textContent = `${totalDeposit}€`;
+    this.labelSummaryIn.textContent = `${totalDeposit.toFixed(this.toFixed)}€`;
   },
-
   refreshSummaryOut(totalWithdrawal) {
-    this.summaryOut.textContent = `${Math.abs(totalWithdrawal)}€`;
+    this.labelSummaryOut.textContent = `${Math.abs(totalWithdrawal).toFixed(
+      this.toFixed
+    )}€`;
+  },
+  refreshSummaryInterest(interest) {
+    this.labelSummaryInterest.textContent = `${interest.toFixed(
+      this.toFixed
+    )}€`;
   },
 
-  refreshSummaryInterest(interest) {
-    this.summaryInterest.textContent = `${interest}€`;
+  // login methods
+  getLoginUsername() {
+    return this.inputLoginUsername.value;
+  },
+  getLoginPin() {
+    return this.inputLoginPin.value;
+  },
+  changeLoginArrowDirection(direction) {
+    if (direction === 'right') this.inputLoginButton.innerHTML = '&rarr;';
+    else if (direction === 'left') this.inputLoginButton.innerHTML = '&larr;';
+  },
+  clearLoginFields() {
+    this.inputLoginUsername.value = '';
+    this.inputLoginPin.value = '';
+  },
+  blurLoginFields() {
+    this.inputLoginUsername.blur();
+    this.inputLoginPin.blur();
+  },
+
+  // transfer methods
+  getTransferTo() {
+    return this.inputTransferTo.value;
+  },
+  getTransferAmount() {
+    return this.inputTransferAmount.value;
+  },
+  clearTransferFields() {
+    this.inputTransferTo.value = '';
+    this.inputTransferAmount.value = '';
+  },
+  blurTransferFields() {
+    this.inputTransferTo.blur();
+    this.inputTransferAmount.blur();
+  },
+
+  // total refresh
+  refreshSecretAccountDomElements(secretAccount) {
+    if (!secretAccount) return this.showApp.call(this, false);
+
+    this.refreshMovements.call(this, secretAccount.getMovements());
+    this.refreshBalance.call(this, secretAccount.getNetBalance());
+    this.refreshSummaryIn.call(this, secretAccount.getTotalDeposit());
+    this.refreshSummaryOut.call(this, secretAccount.getTotalWithdrawal());
+    this.refreshSummaryInterest.call(this, secretAccount.getTotalInterest());
+    this.refreshWelcomeMessage.call(
+      this,
+      `Welcome back ${secretAccount.getOwner().split(' ')[0]}!`
+    );
+    this.showApp.call(this, true);
   },
 };
 
-// Account Methods ////////////////////////////////////////////////////////////
+// Account ////////////////////////////////////////////////////////////////////
+let secretAccount = undefined;
+
+const createUsername = function (account) {
+  account.username = account.owner
+    .toLowerCase()
+    .split(' ')
+    .map((word) => word[0])
+    .join('');
+  return account.username;
+};
+
 const accountPublicMethods = {
   owner: 'TYGVBH fhg GHyj JK Ghkkn g',
   movements: [20000, 4500, -400, 3000, -650, -130, 70, 1300],
@@ -112,16 +211,19 @@ const accountPublicMethods = {
   pin: 1111,
   username: undefined,
 
+  getOwner() {
+    return this.owner;
+  },
+  addMovement(amount) {
+    this.movements.push(amount);
+  },
   getMovements() {
     return this.movements;
   },
-  createUsername() {
-    this.username = this.owner
-      .toLowerCase()
-      .split(' ')
-      .map((word) => word[0])
-      .join('');
+  getUsername() {
+    return this.username;
   },
+
   getTotalDeposit() {
     return this.movements
       .filter((movement) => movement > 0)
@@ -144,8 +246,7 @@ const accountPublicMethods = {
   },
 };
 
-let secretAccount;
-const signIn = function (account) {
+const signIn = function (account, accountPublicMethods) {
   const hiddenAccountInformation = { ...account };
   const publicMethods = { ...accountPublicMethods };
   Object.entries(publicMethods).forEach(([key, value]) => {
@@ -157,12 +258,112 @@ const signIn = function (account) {
   });
   return publicMethods;
 };
+const signOut = function () {
+  return undefined;
+};
 
-secretAccount = signIn(accounts[0]);
-console.log(secretAccount);
+// Event Handlers /////////////////////////////////////////////////////////////
+const handleLogin = function (e) {
+  e.preventDefault();
 
-domElements.refreshMovements(secretAccount.getMovements());
-domElements.refreshBalance(secretAccount.getNetBalance());
-domElements.refreshSummaryIn(secretAccount.getTotalDeposit());
-domElements.refreshSummaryOut(secretAccount.getTotalWithdrawal());
-domElements.refreshSummaryInterest(secretAccount.getTotalInterest());
+  // test if already logged in
+  if (secretAccount) return;
+
+  // read form elements
+  const inputLogin = {
+    username: domElements.getLoginUsername(),
+    pin: Number(domElements.getLoginPin()),
+  };
+
+  // find matching account with login username field
+  const testAccount = accounts.find(
+    (account) => account.username === inputLogin.username
+  );
+  // test matching account's pin with login pin field
+  if (testAccount?.pin !== inputLogin.pin) return;
+
+  // login
+  secretAccount = signIn(testAccount, accountPublicMethods);
+  console.log(secretAccount);
+
+  // render dom
+  domElements.refreshSecretAccountDomElements(secretAccount);
+  domElements.clearLoginFields();
+  domElements.changeLoginArrowDirection('left');
+  domElements.blurLoginFields();
+
+  // switch click event on button
+  this.removeEventListener('click', handleLogin);
+  this.addEventListener('click', handleLogout);
+};
+
+const handleLogout = function (e) {
+  e?.preventDefault();
+
+  // test if not already logged in
+  if (!secretAccount) return;
+
+  // logout
+  secretAccount = undefined;
+  domElements.refreshSecretAccountDomElements(secretAccount);
+  domElements.changeLoginArrowDirection('right');
+  console.log('LOGOUT');
+
+  // switch click event on button
+  this.removeEventListener('click', handleLogout);
+  this.addEventListener('click', handleLogin);
+};
+
+const handleTransferingMoney = function (e) {
+  e.preventDefault();
+
+  // create an object containing transfer information
+  const moneyTransfer = {
+    from: secretAccount?.getUsername(),
+    to: domElements.getTransferTo(),
+    amount: Number(domElements.getTransferAmount()),
+    transferFee: 0,
+  };
+  moneyTransfer.transferFee = Number(
+    (moneyTransfer.amount * 0.002 + 1).toFixed(2)
+  );
+
+  // clear input fields for preventing rapid successions
+  domElements.clearTransferFields();
+  domElements.blurTransferFields();
+
+  // check input sanity
+  const targetAccount = accounts.find(
+    (account) => account.username === moneyTransfer.to
+  );
+  if (
+    !targetAccount ||
+    !secretAccount ||
+    moneyTransfer.amount < 0 ||
+    moneyTransfer.amount + moneyTransfer.transferFee >
+      secretAccount?.getNetBalance()
+  )
+    return;
+
+  // tranfer the money
+  setTimeout(() => {
+    secretAccount?.addMovement(
+      -1 * (moneyTransfer.amount + moneyTransfer.transferFee)
+    );
+    targetAccount.movements.push(moneyTransfer.amount);
+  }, 1000);
+
+  // render the new elements
+  setTimeout(() => {
+    domElements.refreshMovements(secretAccount?.getMovements());
+    domElements.refreshBalance(secretAccount?.getNetBalance());
+  }, 1001);
+};
+
+// Initialization /////////////////////////////////////////////////////////////
+accounts.forEach(createUsername);
+domElements.inputLoginButton.addEventListener('click', handleLogin);
+domElements.inputTransferButton.addEventListener(
+  'click',
+  handleTransferingMoney
+);
