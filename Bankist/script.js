@@ -7,9 +7,22 @@
 // Data ///////////////////////////////////////////////////////////////////////
 const account1 = {
   owner: 'Jonas Schmedtmann',
-  movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
+  movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
   interestRate: 1.2, // %
   pin: 1111,
+
+  movementsDates: [
+    '2019-11-18T21:31:17.178Z',
+    '2019-12-23T07:42:02.383Z',
+    '2020-01-28T09:15:04.904Z',
+    '2020-04-01T10:17:24.185Z',
+    '2020-05-08T14:11:59.604Z',
+    '2020-05-27T17:01:17.194Z',
+    '2020-07-11T23:36:17.929Z',
+    '2020-07-12T10:51:36.790Z',
+  ],
+  currency: 'EUR',
+  locale: 'pt-PT', // de-DE
 };
 
 const account2 = {
@@ -17,23 +30,27 @@ const account2 = {
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
+
+  movementsDates: [
+    '2019-11-01T13:15:33.035Z',
+    '2019-11-30T09:48:16.867Z',
+    '2019-12-25T06:04:23.907Z',
+    '2020-01-25T14:18:46.235Z',
+    '2020-02-05T16:33:06.386Z',
+    '2020-04-10T14:43:26.374Z',
+    '2020-06-25T18:49:59.371Z',
+    '2020-07-26T12:01:20.894Z',
+  ],
+  currency: 'USD',
+  locale: 'en-US',
 };
 
-const account3 = {
-  owner: 'Steven Thomas Williams',
-  movements: [200, -200, 340, -300, -20, 50, 400, -460],
-  interestRate: 0.7,
-  pin: 3333,
-};
+const accounts = [account1, account2];
 
-const account4 = {
-  owner: 'Sarah Smith',
-  movements: [430, 1000, 700, 50, 90],
-  interestRate: 1,
-  pin: 4444,
+const rates = {
+  USDEUR: 0.95,
+  EURUSD: 1.06,
 };
-
-const accounts = [account1, account2, account3, account4];
 
 // Elements ///////////////////////////////////////////////////////////////////
 const labelWelcome = document.querySelector('.welcome');
@@ -75,6 +92,7 @@ const domElements = {
   buttonSortMovements: document.querySelector('.btn--sort'),
 
   labelWelcome: document.querySelector('.welcome'),
+  labelDate: document.querySelector('.date'),
   labelBalance: document.querySelector('.balance__value'),
   labelSummaryIn: document.querySelector('.summary__value--in'),
   labelSummaryOut: document.querySelector('.summary__value--out'),
@@ -95,6 +113,14 @@ const domElements = {
   inputClosePin: document.querySelector('.form__input--pin'),
   inputCloseButton: document.querySelector('.form__btn--close'),
 
+  // helper functions
+  helperTransformCurrency(value, locale, currency) {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+    }).format(+value.toFixed(this.toFixed));
+  },
+
   // app methods
   showApp(isShow) {
     if (isShow) {
@@ -109,15 +135,30 @@ const domElements = {
   },
 
   // movement methods
-  changeMovements(movements) {
+  changeMovements(movements, locale, currency) {
+    const dateDisplayOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    };
     this.containerMovements.innerHTML = '';
-    movements.forEach((movement, i) => {
-      const movementType = movement > 0 ? 'deposit' : 'withdrawal';
-      const TODOOO = '<div class="movements__date">3 days ago</div>';
+    movements.forEach(({ amount, date }, i) => {
+      const movementType = amount > 0 ? 'deposit' : 'withdrawal';
       const htmlTemplate = `
         <div class="movements__row">
           <div class="movements__type movements__type--${movementType}">${movementType}</div>
-          <div class="movements__value">${movement.toFixed(this.toFixed)}€</div>
+          <div class="movements__date">${new Intl.DateTimeFormat(
+            locale,
+            dateDisplayOptions
+          ).format(new Date(date))}</div>
+          <div class="movements__value">${this.helperTransformCurrency.call(
+            this,
+            amount,
+            locale,
+            currency
+          )}</div>
         </div>
       `;
       this.containerMovements.insertAdjacentHTML('afterbegin', htmlTemplate);
@@ -133,22 +174,53 @@ const domElements = {
     this.labelWelcome.textContent = message ?? 'Log in to get started';
   },
 
-  changeBalance(balance) {
-    this.labelBalance.textContent = `${balance.toFixed(this.toFixed)}€`;
+  changeDate(locale, date) {
+    const dateDisplayOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    };
+    this.labelDate.textContent = new Intl.DateTimeFormat(
+      locale,
+      dateDisplayOptions
+    ).format(new Date(date));
   },
 
-  changeSummaryIn(totalDeposit) {
-    this.labelSummaryIn.textContent = `${totalDeposit.toFixed(this.toFixed)}€`;
+  changeBalance(balance, locale, currency) {
+    this.labelBalance.textContent = this.helperTransformCurrency.call(
+      this,
+      balance,
+      locale,
+      currency
+    );
   },
-  changeSummaryOut(totalWithdrawal) {
-    this.labelSummaryOut.textContent = `${Math.abs(totalWithdrawal).toFixed(
-      this.toFixed
-    )}€`;
+
+  changeSummaryIn(totalDeposit, locale, currency) {
+    this.labelSummaryIn.textContent = this.helperTransformCurrency.call(
+      this,
+      totalDeposit,
+      locale,
+      currency
+    );
   },
-  changeSummaryInterest(interest) {
-    this.labelSummaryInterest.textContent = `${interest.toFixed(
-      this.toFixed
-    )}€`;
+  changeSummaryOut(totalWithdrawal, locale, currency) {
+    this.labelSummaryOut.textContent = this.helperTransformCurrency.call(
+      this,
+      Math.abs(totalWithdrawal),
+      locale,
+      currency
+    );
+  },
+  changeSummaryInterest(interest, locale, currency) {
+    this.labelSummaryInterest.textContent = this.helperTransformCurrency.call(
+      this,
+      interest,
+      locale,
+      currency
+    );
   },
 
   // login methods
@@ -220,15 +292,41 @@ const domElements = {
   refreshSecretAccountDomElements(secretAccount) {
     if (!secretAccount) return this.showApp.call(this, false);
 
-    this.changeMovements.call(this, secretAccount.getMovements());
-    this.changeBalance.call(this, secretAccount.getNetBalance());
-    this.changeSummaryIn.call(this, secretAccount.getTotalDeposit());
-    this.changeSummaryOut.call(this, secretAccount.getTotalWithdrawal());
-    this.changeSummaryInterest.call(this, secretAccount.getTotalInterest());
+    const localeAndCurrency = [
+      secretAccount.getLocale(),
+      secretAccount.getCurrency(),
+    ];
+
+    this.changeMovements.call(
+      this,
+      secretAccount.getMovements(),
+      ...localeAndCurrency
+    );
+    this.changeBalance.call(
+      this,
+      secretAccount.getNetBalance(),
+      ...localeAndCurrency
+    );
+    this.changeSummaryIn.call(
+      this,
+      secretAccount.getTotalDeposit(),
+      ...localeAndCurrency
+    );
+    this.changeSummaryOut.call(
+      this,
+      secretAccount.getTotalWithdrawal(),
+      ...localeAndCurrency
+    );
+    this.changeSummaryInterest.call(
+      this,
+      secretAccount.getTotalInterest(),
+      ...localeAndCurrency
+    );
     this.changeWelcomeMessage.call(
       this,
       `Welcome back ${secretAccount.getOwner().split(' ')[0]}!`
     );
+    this.changeDate.call(this, localeAndCurrency[0], Date());
     this.showApp.call(this, true);
   },
 };
@@ -246,26 +344,47 @@ const createUsername = function (account) {
 };
 
 const accountPublicMethods = {
-  owner: 'TYGVBH fhg GHyj JK Ghkkn g',
-  movements: [20000, 4500, -400, 3000, -650, -130, 70, 1300],
+  owner: 'Jonas Schmedtmann',
+  movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
   interestRate: 1.2, // %
   pin: 1111,
-  username: undefined,
+  movementsDates: [
+    '2019-11-18T21:31:17.178Z',
+    '2019-12-23T07:42:02.383Z',
+    '2020-01-28T09:15:04.904Z',
+    '2020-04-01T10:17:24.185Z',
+    '2020-05-08T14:11:59.604Z',
+    '2020-05-27T17:01:17.194Z',
+    '2020-07-11T23:36:17.929Z',
+    '2020-07-12T10:51:36.790Z',
+  ],
+  currency: 'EUR',
+  locale: 'pt-PT', // de-DE
 
   getOwner() {
     return this.owner;
   },
-  addMovement(amount) {
+  addMovement({ amount, date }) {
     this.movements.push(amount);
+    this.movementsDates.push(date);
   },
   getMovements() {
-    return this.movements.slice();
+    return this.movements.map((movement, i) => ({
+      amount: movement,
+      date: this.movementsDates[i],
+    }));
   },
   getUsername() {
     return this.username;
   },
   getPin() {
     return this.pin;
+  },
+  getCurrency() {
+    return this.currency;
+  },
+  getLocale() {
+    return this.locale;
   },
 
   getTotalDeposit() {
@@ -316,7 +435,7 @@ const handleLogin = function (e) {
   // read form elements
   const inputLogin = {
     username: domElements.getLoginUsername(),
-    pin: Number(domElements.getLoginPin()),
+    pin: +domElements.getLoginPin(),
   };
 
   // find matching account with login username field
@@ -329,11 +448,13 @@ const handleLogin = function (e) {
   // login
   secretAccount = signIn(testAccount, accountPublicMethods);
 
+  // clean form fields
+  domElements.clearLoginFields();
+  domElements.blurLoginFields();
+
   // render dom
   domElements.refreshSecretAccountDomElements(secretAccount);
-  domElements.clearLoginFields();
   domElements.changeLoginArrowDirection('left');
-  domElements.blurLoginFields();
 
   // switch click event on button
   this.removeEventListener('click', handleLogin);
@@ -363,12 +484,12 @@ const handleMoneyTransfer = function (e) {
   const moneyTransfer = {
     from: secretAccount?.getUsername(),
     to: domElements.getTransferTo(),
-    amount: Number(domElements.getTransferAmount()),
+    amount: +domElements.getTransferAmount(),
+    conversion: 'EURUSD',
+    date: new Date().toISOString(),
     transferFee: 0,
   };
-  moneyTransfer.transferFee = Number(
-    (moneyTransfer.amount * 0.002 + 1).toFixed(2)
-  );
+  moneyTransfer.transferFee = +(+moneyTransfer.amount * 0.002 + 1).toFixed(2);
 
   // clear input fields for preventing rapid successions
   domElements.clearTransferFields();
@@ -389,16 +510,40 @@ const handleMoneyTransfer = function (e) {
 
   // transfer the money
   const helperTranfer = () => {
-    secretAccount.addMovement(
-      -1 * (moneyTransfer.amount + moneyTransfer.transferFee)
-    );
+    // prepare currency conversion fields
+    moneyTransfer.conversion = `${secretAccount.getCurrency()}${
+      targetAccount.currency
+    }`;
+    const shouldConvert =
+      moneyTransfer.conversion.slice(0, 3) !==
+      moneyTransfer.conversion.slice(-3);
+
+    // commit changes
+    secretAccount.addMovement({
+      amount: -1 * (moneyTransfer.amount + moneyTransfer.transferFee),
+      date: moneyTransfer.date,
+    });
+    console.log(moneyTransfer);
+    shouldConvert && (moneyTransfer.amount *= rates[moneyTransfer.conversion]);
+    console.log(rates[moneyTransfer.conversion]);
+    console.log(moneyTransfer);
     targetAccount.movements.push(moneyTransfer.amount);
+    targetAccount.movementsDates.push(moneyTransfer.date);
   };
 
   // render the changes
   const helperRender = () => {
-    domElements.changeMovements(secretAccount.getMovements());
-    domElements.changeBalance(secretAccount.getNetBalance());
+    domElements.changeMovements(
+      secretAccount.getMovements(),
+      secretAccount.getLocale(),
+      secretAccount.getCurrency()
+    );
+    domElements.changeBalance(
+      secretAccount.getNetBalance(),
+      secretAccount.getLocale(),
+      secretAccount.getCurrency()
+    );
+    domElements.changeSortButton('highest');
   };
 
   // simulate server delay
@@ -413,7 +558,8 @@ const handleLoanRequest = function (e) {
 
   // create an object containing input fields
   const loanRequest = {
-    amount: Number(domElements.getLoanAmount()),
+    amount: +domElements.getLoanAmount(),
+    date: new Date().toISOString(),
   };
 
   // clear input fields for preventing rapid successions
@@ -423,9 +569,10 @@ const handleLoanRequest = function (e) {
   // test requirements
   if (
     !secretAccount ||
+    loanRequest.amount <= 0 ||
     !secretAccount
       .getMovements()
-      .some((movement) => movement >= loanRequest.amount) ||
+      .some(({ amount }) => amount >= loanRequest.amount) ||
     accounts
       .flatMap((account) => account.movements)
       .reduce((sum, movemet) => sum + movemet) <
@@ -435,15 +582,35 @@ const handleLoanRequest = function (e) {
 
   // transfer loan to account
   const helperLoan = () => {
-    secretAccount.addMovement(loanRequest.amount);
+    secretAccount.addMovement({
+      amount: loanRequest.amount,
+      date: loanRequest.date,
+    });
   };
 
   // render changes
   const helperRender = () => {
-    domElements.changeMovements(secretAccount.getMovements());
-    domElements.changeBalance(secretAccount.getNetBalance());
-    domElements.changeSummaryIn(secretAccount.getTotalDeposit());
-    domElements.changeSummaryInterest(secretAccount.getTotalInterest());
+    const localeAndCurrency = [
+      secretAccount.getLocale(),
+      secretAccount.getCurrency(),
+    ];
+    domElements.changeMovements(
+      secretAccount.getMovements(),
+      ...localeAndCurrency
+    );
+    domElements.changeBalance(
+      secretAccount.getNetBalance(),
+      ...localeAndCurrency
+    );
+    domElements.changeSummaryIn(
+      secretAccount.getTotalDeposit(),
+      ...localeAndCurrency
+    );
+    domElements.changeSummaryInterest(
+      secretAccount.getTotalInterest(),
+      ...localeAndCurrency
+    );
+    domElements.changeSortButton('highest');
   };
 
   // simulate server delay
@@ -459,7 +626,7 @@ const handleClosingAccount = function (e) {
   // create an object containing input fields
   const closeAccount = {
     username: domElements.getCloseUsername(),
-    pin: Number(domElements.getClosePin()),
+    pin: +domElements.getClosePin(),
   };
 
   // clear input fields for preventing rapid successions
@@ -519,13 +686,15 @@ const handleSortingMovements = function (e) {
 
   switch (sortingType) {
     case 'highest':
-      sortedMovements.sort((a, b) => a - b);
+      sortedMovements.sort(({ amount: a }, { amount: b }) => a - b);
       break;
     case 'lowest':
-      sortedMovements.sort((a, b) => b - a);
+      sortedMovements.sort(({ amount: a }, { amount: b }) => b - a);
       break;
     case 'amount':
-      sortedMovements.sort((a, b) => Math.abs(a) - Math.abs(b));
+      sortedMovements.sort(
+        ({ amount: a }, { amount: b }) => Math.abs(a) - Math.abs(b)
+      );
       break;
     case 'recent':
     default:
@@ -540,7 +709,11 @@ const handleSortingMovements = function (e) {
     recent: 'highest',
   };
   domElements.changeSortButton(nextSortingType[sortingType] || 'highest');
-  domElements.changeMovements(sortedMovements);
+  domElements.changeMovements(
+    sortedMovements,
+    secretAccount.getLocale(),
+    secretAccount.getCurrency()
+  );
 };
 
 // Initialization /////////////////////////////////////////////////////////////
@@ -553,3 +726,10 @@ domElements.buttonSortMovements.addEventListener(
   'click',
   handleSortingMovements
 );
+
+// auto login
+(() => {
+  domElements.inputLoginUsername.value = 'js';
+  domElements.inputLoginPin.value = '1111';
+  domElements.inputLoginButton.click();
+})();

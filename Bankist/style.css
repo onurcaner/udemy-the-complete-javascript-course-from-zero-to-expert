@@ -16,7 +16,7 @@ html {
 }
 
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   color: #444;
   background-color: #f3f3f3;
   height: 100vh;
@@ -133,7 +133,7 @@ nav {
   grid-row: 2 / span 3;
   background-color: #fff;
   border-radius: 1rem;
-  overflow: scroll;
+  overflow: auto;
 }
 
 .movements__row {
@@ -141,6 +141,9 @@ nav {
   display: flex;
   align-items: center;
   border-bottom: 1px solid #eee;
+}
+.movements__row:nth-child(even) {
+  background-color: #fbfbfb;
 }
 
 .movements__type {
