@@ -85,33 +85,35 @@ const inputClosePin = document.querySelector('.form__input--pin');
 // Elements ///////////////////////////////////////////////////////////////////
 const domElements = {
   toFixed: 2,
-
+  // app
   containerApp: document.querySelector('.app'),
-
-  containerMovements: document.querySelector('.movements'),
-  buttonSortMovements: document.querySelector('.btn--sort'),
-
-  labelWelcome: document.querySelector('.welcome'),
-  labelDate: document.querySelector('.date'),
-  labelBalance: document.querySelector('.balance__value'),
-  labelSummaryIn: document.querySelector('.summary__value--in'),
-  labelSummaryOut: document.querySelector('.summary__value--out'),
-  labelSummaryInterest: document.querySelector('.summary__value--interest'),
-
+  // login
   inputLoginUsername: document.querySelector('.login__input--user'),
   inputLoginPin: document.querySelector('.login__input--pin'),
   inputLoginButton: document.querySelector('.login__btn'),
-
+  // header
+  labelWelcome: document.querySelector('.welcome'),
+  labelDate: document.querySelector('.date'),
+  labelBalance: document.querySelector('.balance__value'),
+  // movements
+  containerMovements: document.querySelector('.movements'),
+  labelSummaryIn: document.querySelector('.summary__value--in'),
+  labelSummaryOut: document.querySelector('.summary__value--out'),
+  labelSummaryInterest: document.querySelector('.summary__value--interest'),
+  buttonSortMovements: document.querySelector('.btn--sort'),
+  // transfer
   inputTransferTo: document.querySelector('.form__input--to'),
   inputTransferAmount: document.querySelector('.form__input--amount'),
   inputTransferButton: document.querySelector('.form__btn--transfer'),
-
+  // loan
   inputLoanAmount: document.querySelector('.form__input--loan-amount'),
   inputLoanButton: document.querySelector('.form__btn--loan'),
-
+  // close
   inputCloseUsername: document.querySelector('.form__input--user'),
   inputClosePin: document.querySelector('.form__input--pin'),
   inputCloseButton: document.querySelector('.form__btn--close'),
+  // timer
+  labelTimer: document.querySelector('.timer'),
 
   // helper functions
   helperTransformCurrency(value, locale, currency) {
@@ -134,7 +136,56 @@ const domElements = {
     }
   },
 
-  // movement methods
+  // login methods
+  getLoginUsername() {
+    return this.inputLoginUsername.value;
+  },
+  getLoginPin() {
+    return this.inputLoginPin.value;
+  },
+  changeLoginArrowDirection(direction) {
+    if (direction === 'right') this.inputLoginButton.innerHTML = '&rarr;';
+    else if (direction === 'left') this.inputLoginButton.innerHTML = '&larr;';
+  },
+  clearLoginFields() {
+    this.inputLoginUsername.value = '';
+    this.inputLoginPin.value = '';
+  },
+  blurLoginFields() {
+    this.inputLoginUsername.blur();
+    this.inputLoginPin.blur();
+  },
+
+  // header methods
+  changeWelcomeMessage(message) {
+    this.labelWelcome.textContent = message ?? 'Log in to get started';
+  },
+
+  changeDate(locale, date) {
+    const dateDisplayOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    };
+    this.labelDate.textContent = new Intl.DateTimeFormat(
+      locale,
+      dateDisplayOptions
+    ).format(new Date(date));
+  },
+
+  changeBalance(balance, locale, currency) {
+    this.labelBalance.textContent = this.helperTransformCurrency.call(
+      this,
+      balance,
+      locale,
+      currency
+    );
+  },
+
+  // movements methods
   changeMovements(movements, locale, currency) {
     const dateDisplayOptions = {
       year: 'numeric',
@@ -165,39 +216,6 @@ const domElements = {
     });
   },
 
-  changeSortButton(message) {
-    this.buttonSortMovements.textContent = `↓ ${message.toUpperCase()}`;
-  },
-
-  // label methods
-  changeWelcomeMessage(message) {
-    this.labelWelcome.textContent = message ?? 'Log in to get started';
-  },
-
-  changeDate(locale, date) {
-    const dateDisplayOptions = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      weekday: 'long',
-      hour: '2-digit',
-      minute: '2-digit',
-    };
-    this.labelDate.textContent = new Intl.DateTimeFormat(
-      locale,
-      dateDisplayOptions
-    ).format(new Date(date));
-  },
-
-  changeBalance(balance, locale, currency) {
-    this.labelBalance.textContent = this.helperTransformCurrency.call(
-      this,
-      balance,
-      locale,
-      currency
-    );
-  },
-
   changeSummaryIn(totalDeposit, locale, currency) {
     this.labelSummaryIn.textContent = this.helperTransformCurrency.call(
       this,
@@ -223,24 +241,8 @@ const domElements = {
     );
   },
 
-  // login methods
-  getLoginUsername() {
-    return this.inputLoginUsername.value;
-  },
-  getLoginPin() {
-    return this.inputLoginPin.value;
-  },
-  changeLoginArrowDirection(direction) {
-    if (direction === 'right') this.inputLoginButton.innerHTML = '&rarr;';
-    else if (direction === 'left') this.inputLoginButton.innerHTML = '&larr;';
-  },
-  clearLoginFields() {
-    this.inputLoginUsername.value = '';
-    this.inputLoginPin.value = '';
-  },
-  blurLoginFields() {
-    this.inputLoginUsername.blur();
-    this.inputLoginPin.blur();
+  changeSortButton(message) {
+    this.buttonSortMovements.textContent = `↓ ${message.toUpperCase()}`;
   },
 
   // transfer methods
@@ -264,11 +266,11 @@ const domElements = {
     return this.inputLoanAmount.value;
   },
   clearLoanFields() {
-    //(s) is silent :)
+    // (s) is silent in methodName
     this.inputLoanAmount.value = '';
   },
   blurLoanFields() {
-    //(s) is silent :)
+    // (s) is silent in methodName
     this.inputLoanAmount.blur();
   },
 
@@ -288,6 +290,18 @@ const domElements = {
     this.inputClosePin.blur();
   },
 
+  // timer methods
+  changeTimer(locale, date) {
+    const dateDisplayOptions = {
+      minute: '2-digit',
+      second: '2-digit',
+    };
+    this.labelTimer.textContent = new Intl.DateTimeFormat(
+      locale,
+      dateDisplayOptions
+    ).format(date);
+  },
+
   // total refresh
   refreshSecretAccountDomElements(secretAccount) {
     if (!secretAccount) return this.showApp.call(this, false);
@@ -297,14 +311,31 @@ const domElements = {
       secretAccount.getCurrency(),
     ];
 
-    this.changeMovements.call(
+    this.showApp.call(this, true);
+    this.changeWelcomeMessage.call(
       this,
-      secretAccount.getMovements(),
-      ...localeAndCurrency
+      `Welcome back ${secretAccount.getOwner().split(' ')[0]}!`
     );
+    this.changeDate.call(this, localeAndCurrency[0], Date());
     this.changeBalance.call(
       this,
       secretAccount.getNetBalance(),
+      ...localeAndCurrency
+    );
+    const sortLabel = this.buttonSortMovements.textContent
+      .slice(2)
+      .toLowerCase();
+    const currentSortingType = {
+      highest: 'recent', //'lowest',
+      lowest: 'highest', //'amount',
+      amount: 'lowest', //'recent',
+      recent: 'amount', //'highest',
+    };
+    this.changeMovements.call(
+      this,
+      secretAccount.getSortedMovements(
+        currentSortingType[sortLabel] || 'recent'
+      ),
       ...localeAndCurrency
     );
     this.changeSummaryIn.call(
@@ -322,12 +353,6 @@ const domElements = {
       secretAccount.getTotalInterest(),
       ...localeAndCurrency
     );
-    this.changeWelcomeMessage.call(
-      this,
-      `Welcome back ${secretAccount.getOwner().split(' ')[0]}!`
-    );
-    this.changeDate.call(this, localeAndCurrency[0], Date());
-    this.showApp.call(this, true);
   },
 };
 
@@ -373,6 +398,28 @@ const accountPublicMethods = {
       amount: movement,
       date: this.movementsDates[i],
     }));
+  },
+  getSortedMovements(sortingType) {
+    const sortedMovements = accountPublicMethods.getMovements.call(this);
+
+    switch (sortingType) {
+      case 'highest':
+        sortedMovements.sort(({ amount: a }, { amount: b }) => a - b);
+        break;
+      case 'lowest':
+        sortedMovements.sort(({ amount: a }, { amount: b }) => b - a);
+        break;
+      case 'amount':
+        sortedMovements.sort(
+          ({ amount: a }, { amount: b }) => Math.abs(a) - Math.abs(b)
+        );
+        break;
+      case 'recent':
+      default:
+        break;
+    }
+
+    return sortedMovements;
   },
   getUsername() {
     return this.username;
@@ -425,6 +472,39 @@ const signOut = function () {
   return undefined;
 };
 
+const timer = { minute: 0, id: setTimeout(() => {}), logoutDate: new Date() };
+const setLogoutTimeout = (seconds) => {
+  // modify important variables
+  timer.logoutDate = new Date();
+  timer.logoutDate.setSeconds(timer.logoutDate.getSeconds() + seconds);
+  timer.minute = new Date().getMinutes();
+
+  // clear interval and setup new one
+  clearInterval(timer.intervalID);
+  timer.intervalID = setInterval(() => {
+    const nowDate = new Date();
+    const remainingTime = timer.logoutDate.getTime() - nowDate.getTime();
+
+    // refresh welcome time if minute changes
+    if (timer.minute !== nowDate.getMinutes()) {
+      timer.minute = nowDate.getMinutes();
+      domElements.refreshSecretAccountDomElements(secretAccount);
+    }
+    // check remaining time
+    if (remainingTime <= 0)
+      setTimeout(() => {
+        clearInterval(timer.intervalID);
+        handleLogout(new Event('click'));
+      });
+
+    // refresh logout time label
+    domElements.changeTimer(
+      secretAccount?.getLocale(),
+      new Date(remainingTime > 0 ? remainingTime : null)
+    );
+  }, 200);
+};
+
 // Event Handlers /////////////////////////////////////////////////////////////
 const handleLogin = function (e) {
   e.preventDefault();
@@ -447,6 +527,7 @@ const handleLogin = function (e) {
 
   // login
   secretAccount = signIn(testAccount, accountPublicMethods);
+  setLogoutTimeout(120);
 
   // clean form fields
   domElements.clearLoginFields();
@@ -457,8 +538,8 @@ const handleLogin = function (e) {
   domElements.changeLoginArrowDirection('left');
 
   // switch click event on button
-  this.removeEventListener('click', handleLogin);
-  this.addEventListener('click', handleLogout);
+  domElements.inputLoginButton.removeEventListener('click', handleLogin);
+  domElements.inputLoginButton.addEventListener('click', handleLogout);
 };
 
 const handleLogout = function (e) {
@@ -473,8 +554,8 @@ const handleLogout = function (e) {
   domElements.changeLoginArrowDirection('right');
 
   // switch click event on button
-  this.removeEventListener('click', handleLogout);
-  this.addEventListener('click', handleLogin);
+  domElements.inputLoginButton.removeEventListener('click', handleLogout);
+  domElements.inputLoginButton.addEventListener('click', handleLogin);
 };
 
 const handleMoneyTransfer = function (e) {
@@ -682,26 +763,13 @@ const handleSortingMovements = function (e) {
 
   // fetch sorting
   const sortingType = this.textContent.slice(2).toLowerCase();
-  const sortedMovements = secretAccount.getMovements().slice();
-
-  switch (sortingType) {
-    case 'highest':
-      sortedMovements.sort(({ amount: a }, { amount: b }) => a - b);
-      break;
-    case 'lowest':
-      sortedMovements.sort(({ amount: a }, { amount: b }) => b - a);
-      break;
-    case 'amount':
-      sortedMovements.sort(
-        ({ amount: a }, { amount: b }) => Math.abs(a) - Math.abs(b)
-      );
-      break;
-    case 'recent':
-    default:
-      break;
-  }
 
   // render changes
+  domElements.changeMovements(
+    secretAccount.getSortedMovements(sortingType),
+    secretAccount.getLocale(),
+    secretAccount.getCurrency()
+  );
   const nextSortingType = {
     highest: 'lowest',
     lowest: 'amount',
@@ -709,11 +777,15 @@ const handleSortingMovements = function (e) {
     recent: 'highest',
   };
   domElements.changeSortButton(nextSortingType[sortingType] || 'highest');
-  domElements.changeMovements(
-    sortedMovements,
-    secretAccount.getLocale(),
-    secretAccount.getCurrency()
-  );
+};
+
+const handleActivity = function (e) {
+  e?.preventDefault();
+
+  // if not logged in, don't even create a new timer
+  if (!secretAccount) return;
+
+  setLogoutTimeout(120);
 };
 
 // Initialization /////////////////////////////////////////////////////////////
@@ -726,10 +798,15 @@ domElements.buttonSortMovements.addEventListener(
   'click',
   handleSortingMovements
 );
+window.addEventListener('click', handleActivity);
+/* window.addEventListener('keydown', handleActivity); */
+window.addEventListener('touchstart', handleActivity);
 
 // auto login
-(() => {
+/* (() => {
   domElements.inputLoginUsername.value = 'js';
   domElements.inputLoginPin.value = '1111';
   domElements.inputLoginButton.click();
-})();
+})(); */
+
+console.log(accounts);

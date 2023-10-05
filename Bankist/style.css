@@ -69,7 +69,7 @@ nav {
 .login__btn {
   border: none;
   background: none;
-  font-size: 2.2rem;
+  font-size: 2.8rem;
   color: inherit;
   cursor: pointer;
   transition: all 0.3s;
@@ -303,4 +303,6 @@ h2 {
 
 .timer {
   font-weight: 600;
+  display: inline-block;
+  width: 4ch;
 }
