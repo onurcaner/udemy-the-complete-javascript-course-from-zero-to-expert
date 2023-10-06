@@ -2,9 +2,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Global Objects /////////////////////////////////////////////////////////////
-const keyboardCallback = {
-  Escape: () => {},
-};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Modal Window ///////////////////////////////////////////////////////////////
 const modal = {
@@ -25,6 +23,7 @@ const modal = {
     this.overlay.classList.add('hidden');
   },
 
+  // mouse methods
   openModalHandler(e) {
     e.preventDefault();
     this.openModal.call(this);
@@ -34,7 +33,14 @@ const modal = {
     this.closeModal.call(this);
   },
 
-  initializeModalEvents(keyboardCallback) {
+  // keyboard methods
+  keyboardEventHandler(e) {
+    if (e.key === 'Escape') {
+      this.isOpen && this.closeModal.call(this);
+    }
+  },
+
+  initialize() {
     this.buttonsOpenModal.forEach((buttonOpenModal) =>
       buttonOpenModal.addEventListener(
         'click',
@@ -49,7 +55,7 @@ const modal = {
 
     this.overlay.addEventListener('click', this.closeModalHandler.bind(this));
 
-    keyboardCallback['Escape'] &&= this.closeModal.bind(this);
+    document.addEventListener('keydown', this.keyboardEventHandler.bind(this));
   },
 };
 
@@ -67,22 +73,21 @@ const navbar = {
     ...document.querySelectorAll('.nav__link'),
   ],
 
+  observer: new IntersectionObserver(() => {}),
+
+  // mouse related methods
   isClickable(element) {
-    if (
+    return (
       element.classList.contains('nav__link') ||
       element.classList.contains('nav__logo')
-    )
-      return true;
-    return false;
+    );
   },
 
   isNavigationButton(element) {
-    if (
+    return (
       element.classList.contains('nav__link') &&
       !element.classList.contains('btn--show-modal')
-    )
-      return true;
-    return false;
+    );
   },
 
   onClickLogoHandler(e) {
@@ -115,18 +120,43 @@ const navbar = {
     );
   },
 
-  initializeNavEvents() {
-    this.imglogo.addEventListener('click', this.onClickLogoHandler.bind(this));
+  // IntersectionObserver methods
+  makeSticky() {
+    this.nav.classList.add('sticky');
+  },
+  makeUnsticky() {
+    this.nav.classList.remove('sticky');
+  },
 
+  intersectionHandler(entries, observer) {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) this.makeSticky.call(this);
+      else this.makeUnsticky.call(this);
+    });
+  },
+
+  initialize() {
+    // add click events
+    this.imglogo.addEventListener('click', this.onClickLogoHandler.bind(this));
     this.buttonContainer.addEventListener(
       'click',
       this.onClickButtonHandler.bind(this)
     );
-
+    // add hover events
     [this.imglogo, this.buttonContainer].forEach((button) => {
       button.addEventListener('mouseover', this.onMouseoverHandler.bind(this));
       button.addEventListener('mouseout', this.onMouseoutHandler.bind(this));
     });
+    // add intersection events
+    const options = {
+      threshold: 0,
+      rootMargin: `-${this.nav.getBoundingClientRect().height}px`,
+    };
+    this.observer = new IntersectionObserver(
+      this.intersectionHandler.bind(this),
+      options
+    );
+    this.observer.observe(this.header);
   },
 };
 
@@ -137,6 +167,13 @@ const operations = {
   buttonContainer: document.querySelector('.operations__tab-container'),
   buttons: document.querySelectorAll('.operations__tab'),
   contents: document.querySelectorAll('.operations__content'),
+
+  isButton(element) {
+    return (
+      element.classList.contains('operations__tab') ||
+      element.parentElement.classList.contains('operations__tab')
+    );
+  },
 
   showContent(contentNumber) {
     const activeClassName = 'operations__content--active';
@@ -158,18 +195,14 @@ const operations = {
 
   showContentHandler(e) {
     e.preventDefault();
-    if (
-      !e.target.classList.contains('operations__tab') &&
-      !e.target.parentElement.classList.contains('operations__tab')
-    )
-      return;
+    if (!this.isButton(e.target)) return;
 
     const tabNumber = e.target.dataset.tab ?? +e.target.textContent;
     this.showContent.call(this, tabNumber);
     this.highlightButton.call(this, tabNumber);
   },
 
-  initializeOperationsEvents() {
+  initialize() {
     this.buttonContainer.addEventListener(
       'click',
       this.showContentHandler.bind(this)
@@ -178,54 +211,81 @@ const operations = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Keyboard ///////////////////////////////////////////////////////////////////
-const keyboardEventHandler = function (e) {
-  switch (e.key) {
-    case 'Escape':
-      modal.isOpen && keyboardCallback[e.key]();
-      break;
-  }
-};
+// Sections ///////////////////////////////////////////////////////////////////
+const sections = {
+  observer: new IntersectionObserver(() => {}),
+  nav: document.querySelector('.nav'),
+  sections: document.querySelectorAll('.section'),
 
-const initializeKeyboardEvents = function () {
-  document.addEventListener('keydown', keyboardEventHandler);
+  revealSection(element) {
+    element.classList.remove('section--hidden');
+  },
+
+  intersectionHandler(entries, observer) {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        this.revealSection.call(this, entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  },
+
+  initialize() {
+    const options = {
+      threshold: 0,
+      rootMargin: `-${this.nav.getBoundingClientRect().height}px`, //9rem
+    };
+    this.observer = new IntersectionObserver(
+      this.intersectionHandler.bind(this),
+      options
+    );
+    this.sections.forEach((section) => {
+      this.observer.observe(section);
+      section.classList.add('section--hidden');
+    });
+  },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Scroll /////////////////////////////////////////////////////////////////////
-const intersectionObserver = {
-  headerObserver: {
-    observer: null,
-    observeTargets: document.querySelector('.header'),
-    modifyTarget: document.querySelector('.nav'),
+// Lazy Loaded Images /////////////////////////////////////////////////////////
+const lazyLoading = {
+  images: [...document.querySelectorAll('.lazy-img[data-src]')],
+  observer: new IntersectionObserver(() => {}),
 
-    makeSticky(makeSticky) {
-      if (makeSticky) this.modifyTarget.classList.add('sticky');
-      else this.modifyTarget.classList.remove('sticky');
-    },
+  loadImage(element) {
+    element.setAttribute('src', element.dataset.src);
+    element.addEventListener('load', this.onLoadImageHandler.bind(this));
+  },
 
-    intersectionHandler(entries, observer) {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) this.makeSticky.call(this, true);
-        else this.makeSticky.call(this, false);
-      });
-    },
+  onLoadImageHandler(e) {
+    e.preventDefault();
+    e.target.classList.remove('lazy-img');
+    this.observer.unobserve(e.target);
+  },
 
-    initialize() {
-      const options = { threshold: 0 };
-      this.observer = new IntersectionObserver(
-        this.intersectionHandler.bind(this),
-        options
-      );
-      this.observer.observe(this.observeTargets);
-    },
+  intersectionHandler(entries, observer) {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) this.loadImage.call(this, entry.target);
+    });
+  },
+
+  initialize() {
+    const options = {
+      threshold: 0,
+      rootMargin: `${window.innerHeight * 0.25}px`,
+    };
+    this.observer = new IntersectionObserver(
+      this.intersectionHandler.bind(this),
+      options
+    );
+    this.images.forEach((image) => this.observer.observe(image));
   },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize /////////////////////////////////////////////////////////////////
-modal.initializeModalEvents(keyboardCallback);
-navbar.initializeNavEvents();
-operations.initializeOperationsEvents();
-intersectionObserver.headerObserver.initialize();
-initializeKeyboardEvents();
+modal.initialize();
+navbar.initialize();
+sections.initialize();
+operations.initialize();
+lazyLoading.initialize();
