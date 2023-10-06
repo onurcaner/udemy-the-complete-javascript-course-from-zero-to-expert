@@ -193,20 +193,39 @@ const initializeKeyboardEvents = function () {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Scroll /////////////////////////////////////////////////////////////////////
-const onScrollHandler = function (e) {
-  console.log(
-    window.scrollY,
-    document.querySelector('.section').getBoundingClientRect()
-  );
-  if (document.querySelector('.section').getBoundingClientRect().y < 1)
-    navbar.nav.classList.add('sticky');
-  else navbar.nav.classList.remove('sticky');
+const intersectionObserver = {
+  headerObserver: {
+    observer: null,
+    observeTargets: document.querySelector('.header'),
+    modifyTarget: document.querySelector('.nav'),
+
+    makeSticky(makeSticky) {
+      if (makeSticky) this.modifyTarget.classList.add('sticky');
+      else this.modifyTarget.classList.remove('sticky');
+    },
+
+    intersectionHandler(entries, observer) {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) this.makeSticky.call(this, true);
+        else this.makeSticky.call(this, false);
+      });
+    },
+
+    initialize() {
+      const options = { threshold: 0 };
+      this.observer = new IntersectionObserver(
+        this.intersectionHandler.bind(this),
+        options
+      );
+      this.observer.observe(this.observeTargets);
+    },
+  },
 };
-window.addEventListener('scroll', onScrollHandler);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize /////////////////////////////////////////////////////////////////
 modal.initializeModalEvents(keyboardCallback);
 navbar.initializeNavEvents();
 operations.initializeOperationsEvents();
+intersectionObserver.headerObserver.initialize();
 initializeKeyboardEvents();
