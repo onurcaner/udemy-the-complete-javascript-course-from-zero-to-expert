@@ -2,7 +2,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Global Objects /////////////////////////////////////////////////////////////
-
+const keyboardCallback = {
+  Escape: () => {},
+};
 ///////////////////////////////////////////////////////////////////////////////
 // Modal Window ///////////////////////////////////////////////////////////////
 const modal = {
@@ -31,29 +33,152 @@ const modal = {
     e.preventDefault();
     this.closeModal.call(this);
   },
+
+  initializeModalEvents(keyboardCallback) {
+    this.buttonsOpenModal.forEach((buttonOpenModal) =>
+      buttonOpenModal.addEventListener(
+        'click',
+        this.openModalHandler.bind(this)
+      )
+    );
+
+    this.buttonClose.addEventListener(
+      'click',
+      this.closeModalHandler.bind(this)
+    );
+
+    this.overlay.addEventListener('click', this.closeModalHandler.bind(this));
+
+    keyboardCallback['Escape'] &&= this.closeModal.bind(this);
+  },
 };
 
-const initializeModal = function (keyboardCallback) {
-  modal.buttonsOpenModal.forEach((buttonOpenModal) =>
-    buttonOpenModal.addEventListener(
-      'click',
-      modal.openModalHandler.bind(modal)
-    )
-  );
-  modal.buttonClose.addEventListener(
-    'click',
-    modal.closeModalHandler.bind(modal)
-  );
-  modal.overlay.addEventListener('click', modal.closeModalHandler.bind(modal));
+///////////////////////////////////////////////////////////////////////////////
+// Navigation Bar /////////////////////////////////////////////////////////////
+const navbar = {
+  scrollOptions: { behavior: 'smooth' },
 
-  keyboardCallback['Escape'] &&= modal.closeModal.bind(modal);
+  header: document.querySelector('.header'),
+  nav: document.querySelector('.nav'),
+  imglogo: document.querySelector('.nav__logo'),
+  buttonContainer: document.querySelector('.nav__links'),
+  clickables: [
+    document.querySelector('.nav__logo'),
+    ...document.querySelectorAll('.nav__link'),
+  ],
+
+  isClickable(element) {
+    if (
+      element.classList.contains('nav__link') ||
+      element.classList.contains('nav__logo')
+    )
+      return true;
+    return false;
+  },
+
+  isNavigationButton(element) {
+    if (
+      element.classList.contains('nav__link') &&
+      !element.classList.contains('btn--show-modal')
+    )
+      return true;
+    return false;
+  },
+
+  onClickLogoHandler(e) {
+    e.preventDefault();
+    this.header.scrollIntoView(this.scrollOptions);
+  },
+
+  onClickButtonHandler(e) {
+    e.preventDefault();
+    if (!this.isNavigationButton(e.target)) return;
+
+    const targetID = e.target.getAttribute('href');
+    document.querySelector(targetID).scrollIntoView(this.scrollOptions);
+  },
+
+  onMouseoverHandler(e) {
+    if (!this.isClickable(e.target)) return;
+
+    this.clickables.forEach((clickable) =>
+      clickable.classList.add('--low-opacity')
+    );
+    e.target.classList.remove('--low-opacity');
+  },
+
+  onMouseoutHandler(e) {
+    if (!this.isClickable(e.target)) return;
+
+    this.clickables.forEach((clickable) =>
+      clickable.classList.remove('--low-opacity')
+    );
+  },
+
+  initializeNavEvents() {
+    this.imglogo.addEventListener('click', this.onClickLogoHandler.bind(this));
+
+    this.buttonContainer.addEventListener(
+      'click',
+      this.onClickButtonHandler.bind(this)
+    );
+
+    [this.imglogo, this.buttonContainer].forEach((button) => {
+      button.addEventListener('mouseover', this.onMouseoverHandler.bind(this));
+      button.addEventListener('mouseout', this.onMouseoutHandler.bind(this));
+    });
+  },
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Operations /////////////////////////////////////////////////////////////////
+const operations = {
+  container: document.querySelector('.operations'),
+  buttonContainer: document.querySelector('.operations__tab-container'),
+  buttons: document.querySelectorAll('.operations__tab'),
+  contents: document.querySelectorAll('.operations__content'),
+
+  showContent(contentNumber) {
+    const activeClassName = 'operations__content--active';
+    this.contents.forEach((content) =>
+      content.classList.remove(activeClassName)
+    );
+    this.container
+      .querySelector(`.operations__content--${contentNumber}`)
+      .classList.add(activeClassName);
+  },
+
+  highlightButton(buttonNumber) {
+    const activeClassName = 'operations__tab--active';
+    this.buttons.forEach((button) => button.classList.remove(activeClassName));
+    this.buttonContainer
+      .querySelector(`.operations__tab--${buttonNumber}`)
+      .classList.add(activeClassName);
+  },
+
+  showContentHandler(e) {
+    e.preventDefault();
+    if (
+      !e.target.classList.contains('operations__tab') &&
+      !e.target.parentElement.classList.contains('operations__tab')
+    )
+      return;
+
+    const tabNumber = e.target.dataset.tab ?? +e.target.textContent;
+    this.showContent.call(this, tabNumber);
+    this.highlightButton.call(this, tabNumber);
+  },
+
+  initializeOperationsEvents() {
+    this.buttonContainer.addEventListener(
+      'click',
+      this.showContentHandler.bind(this)
+    );
+  },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // Keyboard ///////////////////////////////////////////////////////////////////
-const keyboardCallback = {
-  Escape: () => {},
-};
 const keyboardEventHandler = function (e) {
   switch (e.key) {
     case 'Escape':
@@ -61,11 +186,27 @@ const keyboardEventHandler = function (e) {
       break;
   }
 };
+
 const initializeKeyboardEvents = function () {
   document.addEventListener('keydown', keyboardEventHandler);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// Scroll /////////////////////////////////////////////////////////////////////
+const onScrollHandler = function (e) {
+  console.log(
+    window.scrollY,
+    document.querySelector('.section').getBoundingClientRect()
+  );
+  if (document.querySelector('.section').getBoundingClientRect().y < 1)
+    navbar.nav.classList.add('sticky');
+  else navbar.nav.classList.remove('sticky');
+};
+window.addEventListener('scroll', onScrollHandler);
+
+///////////////////////////////////////////////////////////////////////////////
 // Initialize /////////////////////////////////////////////////////////////////
-initializeModal(keyboardCallback);
+modal.initializeModalEvents(keyboardCallback);
+navbar.initializeNavEvents();
+operations.initializeOperationsEvents();
 initializeKeyboardEvents();

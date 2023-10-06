@@ -133,6 +133,7 @@ img {
 .nav__logo {
   height: 4.5rem;
   transition: all 0.3s;
+  cursor: pointer;
 }
 
 .nav__links {
@@ -168,6 +169,10 @@ img {
   color: inherit;
   background-color: var(--color-primary-darker);
   color: #333;
+}
+
+.--low-opacity {
+  opacity: 0.5;
 }
 
 /* HEADER */
