@@ -283,9 +283,96 @@ const lazyLoading = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+//  Slider ////////////////////////////////////////////////////////////////////
+const slider = {
+  currentSlide: 1,
+  slideCount: 3,
+
+  container: document.querySelector('.slider'),
+  slides: document.querySelectorAll('.slide'),
+  buttonLeft: document.querySelector('.slider__btn--left'),
+  buttonRight: document.querySelector('.slider__btn--right'),
+  dotContainer: document.querySelector('.dots'),
+  dots: document.querySelectorAll('.dots__dot'),
+
+  animate() {
+    this.slides.forEach(
+      (slide, i) =>
+        (slide.style.transform = `translateX(${
+          (i - this.currentSlide + 1) * 100
+        }%)`)
+    );
+    this.dots.forEach((dot) => {
+      if (+dot.dataset.slide === this.currentSlide)
+        dot.classList.add('dots__dot--active');
+      else dot.classList.remove('dots__dot--active');
+    });
+  },
+
+  goRight() {
+    if (this.currentSlide === this.slideCount) this.currentSlide = 1;
+    else this.currentSlide += 1;
+    this.animate.call(this);
+  },
+
+  goLeft() {
+    if (this.currentSlide === 1) this.currentSlide = this.slideCount;
+    else this.currentSlide -= 1;
+    this.animate.call(this);
+  },
+
+  goRightHandler(e) {
+    e.preventDefault();
+    this.goRight.call(this);
+  },
+
+  goLeftHandler(e) {
+    e.preventDefault();
+    this.goLeft.call(this);
+  },
+
+  onClickDotHandler(e) {
+    e.preventDefault();
+    if (!e.target.classList.contains('dots__dot--active')) return;
+    this.currentSlide = e.target.dataset.slide;
+    this.animate.call();
+  },
+
+  keyboardEventHandler(e) {
+    e.preventDefault();
+    if (e.key === 'ArrowLeft') this.goLeft.call(this);
+    else if (e.key === 'ArrowRight') this.goRight.call(this);
+  },
+
+  initialize() {
+    this.currentSlide = 1;
+    this.slideCount = this.slides.length;
+
+    this.slides.forEach((slide, i) => {
+      const htmlTemplate = `
+        <button class="dots__dot" data-slide="${i + 1}">&nbsp;</button>
+      `;
+      this.dotContainer.insertAdjacentHTML('beforeend', htmlTemplate);
+    });
+    this.dots = document.querySelectorAll('.dots__dot');
+
+    this.animate.call(this);
+
+    this.buttonLeft.addEventListener('click', this.goLeftHandler.bind(this));
+    this.buttonRight.addEventListener('click', this.goRightHandler.bind(this));
+    this.dotContainer.addEventListener(
+      'click',
+      this.onClickDotHandler.bind(this)
+    );
+    document.addEventListener('keydown', this.keyboardEventHandler.bind(this));
+  },
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Initialize /////////////////////////////////////////////////////////////////
 modal.initialize();
 navbar.initialize();
 sections.initialize();
 operations.initialize();
 lazyLoading.initialize();
+slider.initialize();
