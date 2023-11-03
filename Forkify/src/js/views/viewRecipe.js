@@ -4,6 +4,8 @@ import { RECIPE_CONTAINER_ELEMENT_QUERY } from '../config';
 
 const ViewRecipe = class {
   #containerElement = document.querySelector(RECIPE_CONTAINER_ELEMENT_QUERY);
+  #defaultErrorMessage = 'Something went wrong';
+  #defaultMessage = 'Hello, world';
 
   #createIngredientHTML(ingredient) {
     const { description, quantity, unit } = ingredient;
@@ -125,7 +127,7 @@ const ViewRecipe = class {
     return this;
   }
 
-  renderError(err) {
+  renderError(message = this.#defaultErrorMessage) {
     this.#containerElement.innerHTML = `
       <div class="error">
         <div>
@@ -133,11 +135,34 @@ const ViewRecipe = class {
             <use href="${icons}#icon-alert-triangle"></use>
           </svg>
         </div>
-        <p>${err}</p>
+        <p>ERROR:
+        <br />Failed to get recipe data,
+        <br />${message}</p>
       </div>
     `;
 
     return this;
+  }
+
+  renderMessage(message = this.#defaultMessage) {
+    this.#containerElement.innerHTML = `
+      <div class="message">
+        <div>
+          <svg>
+            <use href="src/img/icons.svg#icon-smile"></use>
+          </svg>
+        </div>
+        <p>${message}</p>
+      </div>
+    `;
+
+    return this;
+  }
+
+  addHandlerToHash(handlerFunction) {
+    ['hashchange', 'load'].forEach((eventType) =>
+      window.addEventListener(eventType, handlerFunction)
+    );
   }
 };
 

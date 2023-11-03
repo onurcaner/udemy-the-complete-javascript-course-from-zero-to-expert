@@ -4,12 +4,10 @@ import { getHash } from './helpers.js';
 
 const Controller = class {
   constructor() {
-    ['hashchange', 'load'].forEach((eventType) =>
-      window.addEventListener(eventType, this.#handleHash.bind(this))
-    );
+    viewRecipe.addHandlerToHash(this.#hashHandler.bind(this));
   }
 
-  async #dispatchRecipeAction(recipeID) {
+  async #dispatchViewRecipeAction(recipeID) {
     try {
       /* const recipe = await model.fetchRecipe('5ed6604591c37cdc054bc886'); */
       viewRecipe.renderSpinner();
@@ -17,17 +15,17 @@ const Controller = class {
       viewRecipe.render(recipe);
       return this;
     } catch (err) {
-      viewRecipe.renderError(err);
       console.error(err);
+      viewRecipe.renderError(err.message);
     }
   }
 
-  #handleHash(e) {
+  #hashHandler(e) {
     e.preventDefault();
     const hash = getHash();
     if (!hash) return;
 
-    this.#dispatchRecipeAction(hash);
+    this.#dispatchViewRecipeAction(hash);
   }
 };
 

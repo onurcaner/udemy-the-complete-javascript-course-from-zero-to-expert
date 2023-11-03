@@ -4,7 +4,7 @@ export const timeout = function (seconds) {
   return new Promise(function (_, reject) {
     setTimeout(function () {
       reject(
-        new Error(`Request took too long! Timeout after ${seconds} second`)
+        new Error(`Request took too long! Timeout after ${seconds} seconds`)
       );
     }, seconds * 1000);
   });
@@ -15,7 +15,7 @@ export const getForkifyJSON = async function (url) {
     const response = await Promise.race([fetch(url), timeout(TIMEOUT_SECONDS)]);
     const data = await response.json();
     if (!response.ok || !data?.status === 'success')
-      throw new Error(`ERROR(${response.status}) - ${data?.message}`);
+      throw new Error(data.message);
 
     return data;
   } catch (err) {
