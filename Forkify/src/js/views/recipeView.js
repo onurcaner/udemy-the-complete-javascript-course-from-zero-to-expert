@@ -1,18 +1,17 @@
-import icons from 'url:../../img/icons.svg';
+import View from './View';
 import { Fraction } from 'fractional';
 import { RECIPE_CONTAINER_ELEMENT_QUERY } from '../config';
 
-const ViewRecipe = class {
-  #containerElement = document.querySelector(RECIPE_CONTAINER_ELEMENT_QUERY);
-  #defaultErrorMessage = 'Something went wrong';
-  #defaultMessage = 'Hello, world';
+const RecipeView = class extends View {
+  _containerElement = document.querySelector(RECIPE_CONTAINER_ELEMENT_QUERY);
+  _recipeData;
 
-  #createIngredientHTML(ingredient) {
+  _createIngredientHTML(ingredient) {
     const { description, quantity, unit } = ingredient;
     return `
       <li class="recipe__ingredient">
         <svg class="recipe__icon">
-          <use href="${icons}#icon-check"></use>
+          <use href="${this._icons}#icon-check"></use>
         </svg>
         <div class="recipe__quantity">${
           quantity ? new Fraction(quantity).toString() : ''
@@ -24,7 +23,8 @@ const ViewRecipe = class {
     `;
   }
 
-  render(recipe) {
+  render(recipe = this._recipeData) {
+    this._recipeData = recipe;
     const {
       id,
       ingredients,
@@ -34,9 +34,9 @@ const ViewRecipe = class {
       cookingTime,
       imageURL,
       sourceURL,
-    } = recipe;
+    } = this._recipeData;
 
-    this.#containerElement.innerHTML = `
+    const html = `
       <figure class="recipe__fig">
         <img src="${imageURL}" alt="${title}" class="recipe__img" />
         <h1 class="recipe__title">
@@ -47,14 +47,14 @@ const ViewRecipe = class {
       <div class="recipe__details">
         <div class="recipe__info">
           <svg class="recipe__info-icon">
-            <use href="${icons}#icon-clock"></use>
+            <use href="${this._icons}#icon-clock"></use>
           </svg>
           <span class="recipe__info-data recipe__info-data--minutes">${cookingTime}</span>
           <span class="recipe__info-text">minutes</span>
         </div>
         <div class="recipe__info">
           <svg class="recipe__info-icon">
-            <use href="${icons}#icon-users"></use>
+            <use href="${this._icons}#icon-users"></use>
           </svg>
           <span class="recipe__info-data recipe__info-data--people">${servings}</span>
           <span class="recipe__info-text">servings</span>
@@ -62,12 +62,12 @@ const ViewRecipe = class {
           <div class="recipe__info-buttons">
             <button class="btn--tiny btn--increase-servings">
               <svg>
-                <use href="${icons}#icon-minus-circle"></use>
+                <use href="${this._icons}#icon-minus-circle"></use>
               </svg>
             </button>
             <button class="btn--tiny btn--increase-servings">
               <svg>
-                <use href="${icons}#icon-plus-circle"></use>
+                <use href="${this._icons}#icon-plus-circle"></use>
               </svg>
             </button>
           </div>
@@ -75,12 +75,12 @@ const ViewRecipe = class {
   
         <div class="recipe__user-generated">
           <svg>
-            <use href="${icons}#icon-user"></use>
+            <use href="${this._icons}#icon-user"></use>
           </svg>
         </div>
         <button class="btn--round">
           <svg class="">
-            <use href="${icons}#icon-bookmark-fill"></use>
+            <use href="${this._icons}#icon-bookmark-fill"></use>
           </svg>
         </button>
       </div>
@@ -88,7 +88,7 @@ const ViewRecipe = class {
       <div class="recipe__ingredients">
         <h2 class="heading--2">Recipe ingredients</h2>
         <ul class="recipe__ingredient-list">
-          ${ingredients.map(this.#createIngredientHTML).join('')}
+          ${ingredients.map(this._createIngredientHTML.bind(this)).join('')}
         </ul>
       </div>
   
@@ -106,64 +106,20 @@ const ViewRecipe = class {
         >
           <span>Directions</span>
           <svg class="search__icon">
-            <use href="${icons}#icon-arrow-right"></use>
+            <use href="${this._icons}#icon-arrow-right"></use>
           </svg>
         </a>
       </div>
     `;
 
-    return this;
+    return this._manipulateDOM(html);
   }
 
-  renderSpinner() {
-    this.#containerElement.innerHTML = `
-      <div class="spinner">
-        <svg>
-          <use href="${icons}#icon-loader"></use>
-        </svg>
-      </div>
-    `;
-
-    return this;
-  }
-
-  renderError(message = this.#defaultErrorMessage) {
-    this.#containerElement.innerHTML = `
-      <div class="error">
-        <div>
-          <svg>
-            <use href="${icons}#icon-alert-triangle"></use>
-          </svg>
-        </div>
-        <p>ERROR:
-        <br />Failed to get recipe data,
-        <br />${message}</p>
-      </div>
-    `;
-
-    return this;
-  }
-
-  renderMessage(message = this.#defaultMessage) {
-    this.#containerElement.innerHTML = `
-      <div class="message">
-        <div>
-          <svg>
-            <use href="src/img/icons.svg#icon-smile"></use>
-          </svg>
-        </div>
-        <p>${message}</p>
-      </div>
-    `;
-
-    return this;
-  }
-
-  addHandlerToHash(handlerFunction) {
+  addHandlerToOnHashchange(handlerFunction) {
     ['hashchange', 'load'].forEach((eventType) =>
       window.addEventListener(eventType, handlerFunction)
     );
   }
 };
 
-export default new ViewRecipe();
+export default new RecipeView();
