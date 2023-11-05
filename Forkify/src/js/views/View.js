@@ -6,9 +6,20 @@ const View = class {
   _defaultErrorMessage = 'Something went wrong';
   _defaultMessage = 'Hello, world';
 
-  _manipulateDOM(html) {
+  _manipulateDOMInnerHTML(html) {
     this._containerElement.innerHTML = html;
     return this;
+  }
+
+  _manipulateDOMInsertElement(element) {
+    this._containerElement.insertAdjacentElement('afterbegin', element);
+    return this;
+  }
+
+  _createElementFromHTML(html) {
+    const divElement = document.createElement('div');
+    divElement.innerHTML = html;
+    return divElement.firstElementChild;
   }
 
   renderSpinner() {
@@ -20,7 +31,7 @@ const View = class {
       </div>
     `;
 
-    return this._manipulateDOM(html);
+    return this._manipulateDOMInnerHTML(html);
   }
 
   renderError(message = this._defaultErrorMessage) {
@@ -36,7 +47,7 @@ const View = class {
       </div>
     `;
 
-    return this._manipulateDOM(html);
+    return this._manipulateDOMInnerHTML(html);
   }
 
   renderMessage(message = this._defaultMessage) {
@@ -51,7 +62,13 @@ const View = class {
       </div>
     `;
 
-    return this._manipulateDOM(html);
+    return this._manipulateDOMInnerHTML(html);
+  }
+
+  addHandlerToOnHashChange(handler) {
+    ['hashchange', 'load'].forEach((eventType) =>
+      window.addEventListener(eventType, handler)
+    );
   }
 };
 

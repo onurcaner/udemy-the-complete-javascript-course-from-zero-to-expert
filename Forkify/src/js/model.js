@@ -7,35 +7,39 @@ import { getForkifyJSON } from './helpers.js';
 
 const State = class {
   #state = {
-    recipes: [{}],
-    search: { keyword: '', results: [{}], pages: 0, page: 0 },
+    recipes: [],
+    search: { keyword: '', results: [], pages: 0 },
     bookmarks: [],
   };
 
+  /* Helpers for mathing properties */
+  #isID(recipeID) {
+    return ({ id }) => id === recipeID;
+  }
+
   /* Get */
-  async getRecipeDetails(recipeId) {
+  async getRecipeDetails(recipeID, servings) {
     /* return recipe if it is inside the cached recipes */
-    const recipe = this.#state.recipes.find(({ id }) => id === recipeId);
-    if (recipe) return { ...recipe };
+    const recipe = this.#state.recipes.find(this.#isID(recipeID));
+    if (recipe) return this.#cloneRecipe(recipe, servings);
 
     try {
       /* Fetch the recipe by ID */
-      const recipe = await this.#fetchRecipeDetails(recipeId);
+      const recipe = await this.#fetchRecipeDetails(recipeID);
       /* Push to recipes on success */
       if (this.#state.recipes.length === RECIPE_CACHE_LIMIT)
         this.#state.recipes.shift();
       this.#state.recipes.push(recipe);
 
-      return { ...recipe };
+      return this.#cloneRecipe(recipe, servings);
     } catch (err) {
       throw err;
     }
   }
 
-  async getSearchResults({ keyword, page = 0 }) {
+  async getSearchResults(keyword, page = 1) {
     /* return cached search results if keyword matches */
-    if (keyword === this.#state.search.keyword)
-      return this.#cloneSearchResults(page);
+    if (keyword === this.#state.search.keyword) return this.#cloneSearch(page);
 
     try {
       /* Modify state on success */
@@ -45,7 +49,7 @@ const State = class {
         this.#state.search.results.length / PER_PAGE_SEARCH_RESULTS
       );
 
-      return this.#cloneSearchResults(page);
+      return this.#cloneSearch(page);
     } catch (err) {
       /* Modify state on error */
       this.#state.search.results = [];
@@ -55,20 +59,42 @@ const State = class {
     }
   }
 
-  #cloneSearchResults(page) {
-    this.#state.search.results.page = page;
-    const clonedSearchResults = this.#state.search.results.map((result) => ({
-      ...result,
-    }));
-    /* If no page number is asked return all objects */
-    if (!this.#state.search.results.page) return clonedSearchResults;
-
+  /* Helpers for cloning states */
+  #cloneSearch(page) {
+    /* Clone search results */
     const start = (page - 1) * PER_PAGE_SEARCH_RESULTS;
     const end = page * PER_PAGE_SEARCH_RESULTS;
-    return clonedSearchResults.slice(start, end);
+    const clonedSearch = { ...this.#state.search };
+    clonedSearch.results.map((result) => ({ ...result }));
+
+    /* Modify cloned search results */
+    clonedSearch.results.forEach(this.#addCustomProperties.bind(this));
+    clonedSearch.results = clonedSearch.results.slice(start, end);
+    return clonedSearch;
   }
 
-  /* Helpers. Convert properties to camelcase */
+  #cloneRecipe(recipe, servings) {
+    /* Start cloning */
+    const clonedRecipe = { ...recipe };
+    clonedRecipe.ingredients = clonedRecipe.ingredients.map((ingredient) => ({
+      ...ingredient,
+    }));
+
+    /* Modify cloned recipe */
+    this.#addCustomProperties(clonedRecipe);
+
+    if (!servings) return clonedRecipe;
+    const multiplier = servings / clonedRecipe.servings;
+    clonedRecipe.servings = servings;
+    clonedRecipe.ingredients = clonedRecipe.ingredients.map((ingredient) => ({
+      ...ingredient,
+      quantity: ingredient.quantity * multiplier,
+    }));
+
+    return clonedRecipe;
+  }
+
+  /* Helpers for converting incoming properties to camelcase */
   #reStructureRecipe(recipeFromDB) {
     const {
       id,
@@ -100,6 +126,7 @@ const State = class {
 
   /* Fetch */
   async #fetchRecipeDetails(id) {
+    console.log('Accessing DB to fetch recipe details by id:', id);
     try {
       /* GET recipe from ID */
       const URL = `${FORKIFY_RECIPE_URL}/${id}`;
@@ -112,6 +139,7 @@ const State = class {
   }
 
   async #fetchSearchResults(keyword) {
+    console.log('Accessing DB to fetch search result by keyword:', keyword);
     try {
       /* Get recipes from keyword */
       const URL = `${FORKIFY_RECIPE_URL}?search=${keyword}`;
@@ -121,6 +149,38 @@ const State = class {
     } catch (err) {
       throw err;
     }
+  }
+
+  /* Bookmarks */
+  toggleBookmark(recipeID) {
+    if (this.#isBookmarked(recipeID)) this.#removeFromBookmarks(recipeID);
+    else this.#addToBookmarks(recipeID);
+    return this;
+  }
+
+  #addToBookmarks(recipeID) {
+    const recipe = this.#state.recipes.find(this.#isID(recipeID));
+    if (!recipe) return;
+
+    this.#state.bookmarks.push(recipe);
+    return this;
+  }
+
+  #removeFromBookmarks(recipeID) {
+    const index = this.#state.bookmarks.findIndex(this.#isID(recipeID));
+    if (index === -1) return;
+
+    this.#state.bookmarks.splice(index, 1);
+    return this;
+  }
+
+  #isBookmarked(recipeID) {
+    return this.#state.bookmarks.some(this.#isID(recipeID));
+  }
+
+  #addCustomProperties(objectWithID) {
+    if (this.#isBookmarked(objectWithID.id)) objectWithID.bookmarked = true;
+    return this;
   }
 };
 

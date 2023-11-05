@@ -1,32 +1,81 @@
 import { getHash } from './helpers.js';
 import model from './model.js';
-import RecipeView from './views/recipeView.js';
-import SearchFormView from './views/searchFormView.js';
+import recipeView from './views/recipeView.js';
+import searchFormView from './views/searchFormView.js';
 import searchResultsView from './views/searchResultsView.js';
 import paginationView from './views/paginationView.js';
 
 const Controller = class {
+  #recipeID = '';
+  #searchRecipes = { keyword: '', page: 0 };
   constructor() {
-    RecipeView.addHandlerToOnHashchange(this.#onHashchangeHandler.bind(this));
-    SearchFormView.addHandlerToOnSubmit(this.#onSubmitHandler.bind(this));
+    recipeView.addHandlerToOnHashChange(
+      this.#onHashChangeHandlerForRecipeView.bind(this)
+    );
+    recipeView.addHandlerConstructorForRecipeServings(
+      this.#constructHandlerForRecipeServings.bind(this)
+    );
+    recipeView.addHandlerForBookmark(
+      this.#onClickHandlerForBookmark.bind(this)
+    );
+    searchFormView.addHandlerToOnSubmit(this.#onSubmitHandler.bind(this));
+    searchResultsView.addHandlerToOnHashChange(
+      this.#onHashChangeHandlerForSearchResultsView.bind(this)
+    );
+    paginationView.addHandlerConstructor(
+      this.#constructHandlerForPagination.bind(this)
+    );
   }
 
-  async #dispatchRecipeDetailsAction(recipeID) {
+  /* Recipe Details */
+  async #dispatchRecipeDetailsAction(recipeID, servings) {
+    this.#recipeID = recipeID;
     try {
       /* Render spinner and get recipe */
-      RecipeView.renderSpinner();
-      const recipe = await model.getRecipeDetails(recipeID);
+      recipeView.renderSpinner();
+      const recipe = await model.getRecipeDetails(recipeID, servings);
       /* Render recipe on success */
-      RecipeView.render(recipe);
+      recipeView.render(recipe);
       return this;
     } catch (err) {
       /* Render error on error */
-      RecipeView.renderError(err.message);
+      recipeView.renderError(err.message);
       console.error(err);
     }
   }
 
-  async #dispatchSearchRecipesAction({ keyword, page }) {
+  #onHashChangeHandlerForRecipeView(e) {
+    e.preventDefault();
+
+    const hash = getHash();
+    if (!hash) return;
+
+    this.#dispatchRecipeDetailsAction(hash);
+  }
+
+  /* Recipe Details - Change Servings */
+  #constructHandlerForRecipeServings(servings) {
+    const recipeID = this.#recipeID;
+    return (e) => {
+      e.preventDefault();
+      this.#dispatchRecipeDetailsAction(recipeID, servings);
+    };
+  }
+
+  /* Recipe Details - Bookmarking */
+  #onClickHandlerForBookmark(e) {
+    e.preventDefault();
+    const hash = getHash();
+    if (!hash) return;
+
+    model.toggleBookmark(hash);
+    this.#dispatchRecipeDetailsAction(hash);
+  }
+
+  /* Search Recipes */
+  async #dispatchSearchRecipesAction(keyword, page = 1) {
+    this.#searchRecipes.keyword = keyword;
+    this.#searchRecipes.page = page;
     /* If keyword is empty string */
     if (keyword.length === 0) {
       searchResultsView.renderError(searchResultsView.errorMessage.emptyInput);
@@ -35,36 +84,49 @@ const Controller = class {
     try {
       /* Render spinner and get search results */
       searchResultsView.renderSpinner();
-      const recipes = await model.getSearchResults({ keyword, page });
+      const { results, pages } = await model.getSearchResults(keyword, page);
       /* Check search results on success */
-      if (!recipes?.length)
+      if (!pages)
         throw new Error(
           `${searchResultsView.errorMessage.noResults} ${keyword}`
         );
       /* Then render the results */
-      searchResultsView.render(recipes);
+      searchResultsView.render(results);
+      paginationView.render(page, pages);
       return this;
     } catch (err) {
       /* Render error on error */
       searchResultsView.renderError(err.message);
+      paginationView.renderError();
       console.error(err);
+      this.#searchRecipes.page = 0;
     }
-  }
-
-  #onHashchangeHandler(e) {
-    e.preventDefault();
-    const hash = getHash();
-    if (!hash) return;
-
-    this.#dispatchRecipeDetailsAction(hash);
   }
 
   #onSubmitHandler(e) {
     e.preventDefault();
 
-    const keyword = SearchFormView.getQuery().trim();
-    console.log(keyword);
-    this.#dispatchSearchRecipesAction({ keyword, page: 1 });
+    const keyword = searchFormView.getQuery().trim();
+    this.#dispatchSearchRecipesAction(keyword);
+  }
+
+  #onHashChangeHandlerForSearchResultsView(e) {
+    e.preventDefault();
+
+    const hash = getHash();
+    const { keyword, page } = this.#searchRecipes;
+    if (!hash || !page) return;
+
+    this.#dispatchSearchRecipesAction(keyword, page);
+  }
+
+  /* Search Recipes - Pagination */
+  #constructHandlerForPagination(page) {
+    const keyword = this.#searchRecipes.keyword;
+    return (e) => {
+      e.preventDefault();
+      this.#dispatchSearchRecipesAction(keyword, page);
+    };
   }
 };
 

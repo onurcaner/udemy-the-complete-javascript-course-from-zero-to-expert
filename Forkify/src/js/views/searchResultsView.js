@@ -1,5 +1,6 @@
 import View from './View';
 import { SEARCH_RESULTS_CONTAINER_ELEMENT_QUERY } from '../config';
+import { getHash } from '../helpers';
 
 const SearchResultView = class extends View {
   _containerElement = document.querySelector(
@@ -11,21 +12,28 @@ const SearchResultView = class extends View {
   };
 
   _createRecipeHTML(recipe) {
-    const { id, imageURL, publisher, title } = recipe;
+    const { bookmarked, id, imageURL, publisher, title, userGenerated } =
+      recipe;
+    const hash = getHash();
+    // prettier-ignore
     return `
       <li class="preview">
-        <a class="preview__link" href="#${id}">
+        <a class="preview__link ${id === hash && 'preview__link--active'}" href="#${id}">
           <figure class="preview__fig">
             <img src="${imageURL}" alt="${title}" />
           </figure>
           <div class="preview__data">
             <h4 class="preview__title">${title}</h4>
             <p class="preview__publisher">${publisher}</p>
-            <div class="preview__user-generated">
-              <svg>
-                <use href="${this._icons}#icon-user"></use>
-              </svg>
-            </div>
+            ${
+              userGenerated ?
+              `<div class="preview__user-generated">
+                <svg>
+                  <use href="${this._icons}#icon-user"></use>
+                </svg>
+              </div>`
+              : ''
+            }
           </div>
         </a>
       </li>
@@ -37,7 +45,7 @@ const SearchResultView = class extends View {
       ${recipes.map(this._createRecipeHTML.bind(this)).join('')}
     `;
 
-    this._manipulateDOM(html);
+    this._manipulateDOMInnerHTML(html);
   }
 };
 
