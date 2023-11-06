@@ -1,25 +1,11 @@
-const SearchFormView = class {
-  _containerElement = document.querySelector('.search');
-  _inputElement = document.querySelector('.search__field');
+import FormView from './FormView';
 
-  _clearInputValue() {
-    this._inputElement.value = '';
-    return this;
-  }
+const SearchFormView = class extends FormView {
+  _formElement = document.querySelector('.search');
 
-  _getInputValue() {
-    return this._inputElement.value;
-  }
-
-  getQuery() {
-    const query = this._getInputValue();
-    this._clearInputValue();
-    return query;
-  }
-
-  /* Events - Publisher, Subscriber pattern */
-  addHandlerToOnSubmit(handler) {
-    this._containerElement.addEventListener('submit', handler);
+  getSearchedWord() {
+    const { keyword } = this.getValues();
+    return keyword;
   }
 };
 

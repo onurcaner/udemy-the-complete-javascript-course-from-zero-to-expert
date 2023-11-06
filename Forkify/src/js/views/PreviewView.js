@@ -1,7 +1,7 @@
 import View from './View';
 import { getHash } from '../helpers';
 
-const ViewPreview = class extends View {
+const PreviewView = class extends View {
   _containerElement = document.querySelector('.temp');
 
   /* Create HTML strings */
@@ -48,4 +48,4 @@ const ViewPreview = class extends View {
   }
 };
 
-export default ViewPreview;
+export default PreviewView;

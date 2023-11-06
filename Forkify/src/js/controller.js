@@ -5,6 +5,7 @@ import searchFormView from './views/searchFormView.js';
 import searchResultsView from './views/searchResultsView.js';
 import paginationView from './views/paginationView.js';
 import bookmarksView from './views/bookmarksView.js';
+import addRecipeView from './views/addRecipeView.js';
 
 const Controller = class {
   #recipeID = '';
@@ -19,7 +20,9 @@ const Controller = class {
     recipeView.addHandlerForBookmark(
       this.#onClickHandlerForBookmark.bind(this)
     );
-    searchFormView.addHandlerToOnSubmit(this.#onSubmitHandler.bind(this));
+    searchFormView.addHandlerToOnSubmit(
+      this.#onSubmitHandlerForSearchingRecipes.bind(this)
+    );
     searchResultsView.addHandlerToOnHashChange(
       this.#onHashChangeHandlerForSearchResultsView.bind(this)
     );
@@ -28,6 +31,9 @@ const Controller = class {
     );
     bookmarksView.addHandlerToOnHashChange(
       this.#onHashChangeHandlerForBookmarksView.bind(this)
+    );
+    addRecipeView.addHandlerToOnSubmit(
+      this.#onSubmitHandlerForUploadingRecipe.bind(this)
     );
   }
 
@@ -107,10 +113,10 @@ const Controller = class {
     }
   }
 
-  #onSubmitHandler(e) {
+  #onSubmitHandlerForSearchingRecipes(e) {
     e.preventDefault();
 
-    const keyword = searchFormView.getQuery().trim();
+    const keyword = searchFormView.getSearchedWord().trim();
     this.#dispatchSearchRecipesAction(keyword);
   }
 
@@ -149,6 +155,14 @@ const Controller = class {
   #onHashChangeHandlerForBookmarksView(e) {
     e.preventDefault();
     this.#dispatchBookmarksAction();
+  }
+
+  /* Add Recipe */
+  #onSubmitHandlerForUploadingRecipe(e) {
+    e.preventDefault();
+
+    const recipeData = addRecipeView.getValues();
+    console.log(recipeData);
   }
 };
 

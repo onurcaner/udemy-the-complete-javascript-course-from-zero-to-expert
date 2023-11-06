@@ -1,6 +1,6 @@
-import ViewPreview from './ViewPreview';
+import PreviewView from './PreviewView';
 
-const SearchResultView = class extends ViewPreview {
+const SearchResultView = class extends PreviewView {
   _containerElement = document.querySelector('.results');
 
   errorMessage = {

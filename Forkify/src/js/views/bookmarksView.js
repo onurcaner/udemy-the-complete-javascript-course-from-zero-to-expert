@@ -1,6 +1,6 @@
-import ViewPreview from './ViewPreview';
+import PreviewView from './PreviewView';
 
-const BookmarksView = class extends ViewPreview {
+const BookmarksView = class extends PreviewView {
   _containerElement = document.querySelector('.bookmarks__list');
 
   message = {
