@@ -1,28 +1,25 @@
-import {
-  SEARCH_FORM_ELEMENT_QUERY,
-  SEARCH_INPUT_ELEMENT_QUERY,
-} from '../config';
-
 const SearchFormView = class {
-  #containerElement = document.querySelector(SEARCH_FORM_ELEMENT_QUERY);
-  #inputElement = document.querySelector(SEARCH_INPUT_ELEMENT_QUERY);
+  _containerElement = document.querySelector('.search');
+  _inputElement = document.querySelector('.search__field');
 
-  #clearInputValue() {
-    this.#inputElement.value = '';
+  _clearInputValue() {
+    this._inputElement.value = '';
+    return this;
   }
 
-  #getInputValue() {
-    return this.#inputElement.value;
+  _getInputValue() {
+    return this._inputElement.value;
   }
 
   getQuery() {
-    const query = this.#getInputValue();
-    this.#clearInputValue();
+    const query = this._getInputValue();
+    this._clearInputValue();
     return query;
   }
 
-  addHandlerToOnSubmit(handlerFunction) {
-    this.#containerElement.addEventListener('submit', handlerFunction);
+  /* Events - Publisher, Subscriber pattern */
+  addHandlerToOnSubmit(handler) {
+    this._containerElement.addEventListener('submit', handler);
   }
 };
 

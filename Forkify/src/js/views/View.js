@@ -6,6 +6,7 @@ const View = class {
   _defaultErrorMessage = 'Something went wrong';
   _defaultMessage = 'Hello, world';
 
+  /* DOM manipulation methods */
   _manipulateDOMInnerHTML(html) {
     this._containerElement.innerHTML = html;
     return this;
@@ -16,13 +17,15 @@ const View = class {
     return this;
   }
 
+  /* Create Element from HTML that wrapped from single HTML tag */
   _createElementFromHTML(html) {
     const divElement = document.createElement('div');
     divElement.innerHTML = html;
     return divElement.firstElementChild;
   }
 
-  renderSpinner() {
+  /* Create HTML strings */
+  _createSpinnerHTML() {
     const html = `
       <div class="spinner">
         <svg>
@@ -30,11 +33,10 @@ const View = class {
         </svg>
       </div>
     `;
-
-    return this._manipulateDOMInnerHTML(html);
+    return html;
   }
 
-  renderError(message = this._defaultErrorMessage) {
+  _createErrorHTML(message) {
     const html = `
       <div class="error">
         <div>
@@ -46,11 +48,10 @@ const View = class {
         <br />${message}</p>
       </div>
     `;
-
-    return this._manipulateDOMInnerHTML(html);
+    return html;
   }
 
-  renderMessage(message = this._defaultMessage) {
+  _createMessageHTML(message) {
     const html = `
       <div class="message">
         <div>
@@ -61,10 +62,30 @@ const View = class {
         <p>${message}</p>
       </div>
     `;
+    return html;
+  }
 
+  /* Render */
+  renderSpinner() {
+    const html = this._createSpinnerHTML();
     return this._manipulateDOMInnerHTML(html);
   }
 
+  renderError(message = this._defaultErrorMessage) {
+    const html = this._createErrorHTML(message);
+    return this._manipulateDOMInnerHTML(html);
+  }
+
+  renderMessage(message = this._defaultMessage) {
+    const html = this._createMessageHTML(message);
+    return this._manipulateDOMInnerHTML(html);
+  }
+
+  renderClear() {
+    return this._manipulateDOMInnerHTML('');
+  }
+
+  /* Events - Publisher, Subscriber pattern */
   addHandlerToOnHashChange(handler) {
     ['hashchange', 'load'].forEach((eventType) =>
       window.addEventListener(eventType, handler)

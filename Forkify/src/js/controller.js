@@ -4,6 +4,7 @@ import recipeView from './views/recipeView.js';
 import searchFormView from './views/searchFormView.js';
 import searchResultsView from './views/searchResultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarksView from './views/bookmarksView.js';
 
 const Controller = class {
   #recipeID = '';
@@ -24,6 +25,9 @@ const Controller = class {
     );
     paginationView.addHandlerConstructor(
       this.#constructHandlerForPagination.bind(this)
+    );
+    bookmarksView.addHandlerToOnHashChange(
+      this.#onHashChangeHandlerForBookmarksView.bind(this)
     );
   }
 
@@ -46,7 +50,6 @@ const Controller = class {
 
   #onHashChangeHandlerForRecipeView(e) {
     e.preventDefault();
-
     const hash = getHash();
     if (!hash) return;
 
@@ -70,6 +73,7 @@ const Controller = class {
 
     model.toggleBookmark(hash);
     this.#dispatchRecipeDetailsAction(hash);
+    this.#dispatchBookmarksAction();
   }
 
   /* Search Recipes */
@@ -112,10 +116,8 @@ const Controller = class {
 
   #onHashChangeHandlerForSearchResultsView(e) {
     e.preventDefault();
-
-    const hash = getHash();
     const { keyword, page } = this.#searchRecipes;
-    if (!hash || !page) return;
+    if (!page) return;
 
     this.#dispatchSearchRecipesAction(keyword, page);
   }
@@ -127,6 +129,26 @@ const Controller = class {
       e.preventDefault();
       this.#dispatchSearchRecipesAction(keyword, page);
     };
+  }
+
+  /* Bookmarks */
+  #dispatchBookmarksAction() {
+    try {
+      /* Fetch bookmarks from local storage */
+      const bookmarkedRecipes = model.getBookmarkedRecipes();
+      if (!bookmarkedRecipes || bookmarkedRecipes.length === 0)
+        throw new Error(bookmarksView.message.noBookmarks);
+
+      /* Render */
+      bookmarksView.render(bookmarkedRecipes);
+    } catch (err) {
+      bookmarksView.renderMessage(err.message);
+    }
+  }
+
+  #onHashChangeHandlerForBookmarksView(e) {
+    e.preventDefault();
+    this.#dispatchBookmarksAction();
   }
 };
 

@@ -1,36 +1,17 @@
 import View from './View';
 import { Fraction } from 'fractional';
-import { RECIPE_CONTAINER_ELEMENT_QUERY } from '../config';
 
 const RecipeView = class extends View {
-  _containerElement = document.querySelector(RECIPE_CONTAINER_ELEMENT_QUERY);
+  _containerElement = document.querySelector('.recipe');
   _constructHandlerToChangeServings = (targetServings) => {};
   _onClickHandlerForBookmark = (shouldAdd) => {};
   _servings = 4;
   _id = '';
 
-  _addEventListenerToServingButtons() {
-    const decreaseButton = document.querySelector('.btn--decrease-servings');
-    const increaseButton = document.querySelector('.btn--increase-servings');
-    decreaseButton.addEventListener(
-      'click',
-      this._constructHandlerToChangeServings(this._servings - 1)
-    );
-    increaseButton.addEventListener(
-      'click',
-      this._constructHandlerToChangeServings(this._servings + 1)
-    );
-    return this;
-  }
-
-  _addEventListenerToBookmarkButton() {
-    const bookmarkButton = document.querySelector('.btn--bookmark');
-    bookmarkButton.addEventListener('click', this._onClickHandlerForBookmark);
-  }
-
+  /* Create HTML strings */
   _createIngredientHTML(ingredient) {
     const { description, quantity, unit } = ingredient;
-    return `
+    const html = `
       <li class="recipe__ingredient">
         <svg class="recipe__icon">
           <use href="${this._icons}#icon-check"></use>
@@ -43,12 +24,12 @@ const RecipeView = class extends View {
         </div>
       </li>
     `;
+    return html;
   }
 
-  render(recipe) {
+  _createRecipeDetailsHTML(recipe) {
     const {
       bookmarked,
-      id,
       ingredients,
       publisher,
       servings,
@@ -59,8 +40,6 @@ const RecipeView = class extends View {
       userGenerated,
     } = recipe;
 
-    this._id = id;
-    this._servings = servings;
     // prettier-ignore
     const html = `
       <figure class="recipe__fig">
@@ -104,10 +83,11 @@ const RecipeView = class extends View {
           `<div class="recipe__user-generated">
             <svg>
               <use href="${this._icons}#icon-user"></use>
-          </svg>
+            </svg>
           </div>`
           : ``
         }
+
         <button class="btn--round btn--bookmark">
           <svg class="">
             <use href="${this._icons}${bookmarked ? '#icon-bookmark-fill' : '#icon-bookmark'}"></use>
@@ -141,6 +121,16 @@ const RecipeView = class extends View {
         </a>
       </div>
     `;
+    return html;
+  }
+
+  /* Render */
+  render(recipe) {
+    const { id, servings } = recipe;
+
+    this._id = id;
+    this._servings = servings;
+    const html = this._createRecipeDetailsHTML(recipe);
 
     this._manipulateDOMInnerHTML(html)
       ._addEventListenerToServingButtons()
@@ -148,6 +138,27 @@ const RecipeView = class extends View {
     return this;
   }
 
+  /* Events - Linking handlers */
+  _addEventListenerToServingButtons() {
+    const decreaseButton = document.querySelector('.btn--decrease-servings');
+    const increaseButton = document.querySelector('.btn--increase-servings');
+    decreaseButton.addEventListener(
+      'click',
+      this._constructHandlerToChangeServings(this._servings - 1)
+    );
+    increaseButton.addEventListener(
+      'click',
+      this._constructHandlerToChangeServings(this._servings + 1)
+    );
+    return this;
+  }
+
+  _addEventListenerToBookmarkButton() {
+    const bookmarkButton = document.querySelector('.btn--bookmark');
+    bookmarkButton.addEventListener('click', this._onClickHandlerForBookmark);
+  }
+
+  /* Events - Publisher, Subscriber pattern */
   addHandlerConstructorForRecipeServings(handlerConstructor) {
     this._constructHandlerToChangeServings = handlerConstructor;
   }

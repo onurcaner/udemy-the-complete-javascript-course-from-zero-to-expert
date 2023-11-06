@@ -2,6 +2,7 @@ import {
   FORKIFY_RECIPE_URL,
   RECIPE_CACHE_LIMIT,
   PER_PAGE_SEARCH_RESULTS,
+  LOCAL_STORAGE_KEY_FOR_BOOKMARKED_RECIPES,
 } from './config.js';
 import { getForkifyJSON } from './helpers.js';
 
@@ -11,6 +12,10 @@ const State = class {
     search: { keyword: '', results: [], pages: 0 },
     bookmarks: [],
   };
+
+  constructor() {
+    this.#state.bookmarks = this.#fetchBookmarkedRecipes();
+  }
 
   /* Helpers for mathing properties */
   #isID(recipeID) {
@@ -59,6 +64,10 @@ const State = class {
     }
   }
 
+  getBookmarkedRecipes() {
+    return this.#cloneBookmarkedRecipes();
+  }
+
   /* Helpers for cloning states */
   #cloneSearch(page) {
     /* Clone search results */
@@ -94,6 +103,16 @@ const State = class {
     return clonedRecipe;
   }
 
+  #cloneBookmarkedRecipes() {
+    return JSON.parse(JSON.stringify(this.#state.bookmarks));
+  }
+
+  /* Helpers for adding bookmarked and userGenerated fields */
+  #addCustomProperties(objectWithID) {
+    if (this.#isBookmarked(objectWithID.id)) objectWithID.bookmarked = true;
+    return this;
+  }
+
   /* Helpers for converting incoming properties to camelcase */
   #reStructureRecipe(recipeFromDB) {
     const {
@@ -124,7 +143,7 @@ const State = class {
     return { id, publisher, title, imageURL };
   }
 
-  /* Fetch */
+  /* Fetch - Database */
   async #fetchRecipeDetails(id) {
     console.log('Accessing DB to fetch recipe details by id:', id);
     try {
@@ -151,11 +170,31 @@ const State = class {
     }
   }
 
+  /* Local storage */
+  #fetchBookmarkedRecipes() {
+    console.log('Accessing localStorage to load bookmarked recipes');
+    const bookmarks = JSON.parse(
+      localStorage.getItem(LOCAL_STORAGE_KEY_FOR_BOOKMARKED_RECIPES)
+    );
+    if (!bookmarks || !Array.isArray(bookmarks)) return [];
+    else return bookmarks;
+  }
+
+  #storeBookmarkedRecipes() {
+    console.log('Accessing localStorage to store bookmarked recipes');
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY_FOR_BOOKMARKED_RECIPES,
+      JSON.stringify(this.#state.bookmarks)
+    );
+    return this;
+  }
+
   /* Bookmarks */
   toggleBookmark(recipeID) {
     if (this.#isBookmarked(recipeID)) this.#removeFromBookmarks(recipeID);
     else this.#addToBookmarks(recipeID);
-    return this;
+
+    return this.#storeBookmarkedRecipes();
   }
 
   #addToBookmarks(recipeID) {
@@ -176,11 +215,6 @@ const State = class {
 
   #isBookmarked(recipeID) {
     return this.#state.bookmarks.some(this.#isID(recipeID));
-  }
-
-  #addCustomProperties(objectWithID) {
-    if (this.#isBookmarked(objectWithID.id)) objectWithID.bookmarked = true;
-    return this;
   }
 };
 

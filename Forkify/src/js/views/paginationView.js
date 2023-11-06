@@ -1,30 +1,19 @@
 import View from './View';
-import { PAGINATION_CONTAINER_ELEMENT_QUERY } from '../config';
 
 const PaginationView = class extends View {
   _page = 0;
   _pages = 0;
-  _containerElement = document.querySelector(
-    PAGINATION_CONTAINER_ELEMENT_QUERY
-  );
+  _containerElement = document.querySelector('.pagination');
   _constructHandlerForPagination = (targetPage) => {};
 
-  _clearPageButtons() {
-    this._containerElement.innerHTML = '';
-    return this;
-  }
-
-  _renderPageButton(html, targetPage) {
+  /* Create Elements */
+  _createPageButtonElement(html, targetPage) {
     const buttonElement = this._createElementFromHTML(html);
-    buttonElement.addEventListener(
-      'click',
-      this._constructHandlerForPagination(targetPage)
-    );
-    this._manipulateDOMInsertElement(buttonElement);
-    return this;
+    this._addEventListenerToButtonElement(buttonElement, targetPage);
+    return buttonElement;
   }
 
-  _renderPreviousPageButton() {
+  _createPreviousPageButtonElement() {
     const targetPage = this._page - 1;
     const html = `
       <button class="btn--inline pagination__btn--prev">
@@ -35,10 +24,10 @@ const PaginationView = class extends View {
       </button>
     `;
 
-    return this._renderPageButton(html, targetPage);
+    return this._createPageButtonElement(html, targetPage);
   }
 
-  _renderNextPageButton() {
+  _createNextPageButtonElement() {
     const targetPage = this._page + 1;
     const html = `
       <button class="btn--inline pagination__btn--next">
@@ -49,27 +38,39 @@ const PaginationView = class extends View {
       </button>
     `;
 
-    return this._renderPageButton(html, targetPage);
+    return this._createPageButtonElement(html, targetPage);
   }
 
+  /* Render */
   _renderPageButtons() {
-    this._clearPageButtons();
+    this.renderClear();
+
     /* Single page result */
     if (this._page === 1 && this._pages === 1) {
       /* Render none */
     }
+
     /* At first page and there exists next page */
     if (this._page === 1 && this._pages > 1) {
-      this._renderNextPageButton();
+      const nextPageButton = this._createNextPageButtonElement();
+      this._manipulateDOMInsertElement(nextPageButton);
     }
+
     /* At some page >1 and there exists a next page */
     if (this._page > 1 && this._pages > this._page) {
-      this._renderPreviousPageButton()._renderNextPageButton();
+      const previousPageButton = this._createPreviousPageButtonElement();
+      const nextPageButton = this._createNextPageButtonElement();
+      this._manipulateDOMInsertElement(
+        previousPageButton
+      )._manipulateDOMInsertElement(nextPageButton);
     }
+
     /* At some page >1 and there exists NO next page */
     if (this._page > 1 && this._pages === this._page) {
-      this._renderPreviousPageButton();
+      const previousPageButton = this._createPreviousPageButtonElement();
+      this._manipulateDOMInsertElement(previousPageButton);
     }
+
     return this;
   }
 
@@ -77,15 +78,25 @@ const PaginationView = class extends View {
     this._page = page;
     this._pages = pages;
     this._renderPageButtons();
+    return this;
   }
 
   renderError() {
     this._page = 0;
     this._pages = 0;
-    this._clearPageButtons();
+    return this.renderClear();
+  }
+
+  /* Events - Linking handlers */
+  _addEventListenerToButtonElement(buttonElement, targetPage) {
+    buttonElement.addEventListener(
+      'click',
+      this._constructHandlerForPagination(targetPage)
+    );
     return this;
   }
 
+  /* Events - Publisher, Subscriber pattern */
   addHandlerConstructor(handlerConstructor) {
     this._constructHandlerForPagination = handlerConstructor;
   }
