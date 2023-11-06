@@ -1,4 +1,4 @@
-import { getHash } from './helpers.js';
+import { getHash, setHash } from './helpers.js';
 import model from './model.js';
 import recipeView from './views/recipeView.js';
 import searchFormView from './views/searchFormView.js';
@@ -11,6 +11,7 @@ const Controller = class {
   #recipeID = '';
   #searchRecipes = { keyword: '', page: 0 };
   constructor() {
+    console.log('Initializing the App');
     recipeView.addHandlerToOnHashChange(
       this.#onHashChangeHandlerForRecipeView.bind(this)
     );
@@ -158,11 +159,22 @@ const Controller = class {
   }
 
   /* Add Recipe */
+  async #dispatchAddRecipeAction() {
+    try {
+      /* Read form data and post it to API */
+      const formData = addRecipeView.readValues();
+      const recipe = await model.postRecipe(formData);
+      /* Change URL and clear the form */
+      addRecipeView.clearValues();
+      setHash(recipe.id);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   #onSubmitHandlerForUploadingRecipe(e) {
     e.preventDefault();
-
-    const recipeData = addRecipeView.getValues();
-    console.log(recipeData);
+    this.#dispatchAddRecipeAction();
   }
 };
 

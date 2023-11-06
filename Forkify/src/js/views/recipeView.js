@@ -78,15 +78,14 @@ const RecipeView = class extends View {
           </div>
         </div>
   
-        ${
-          userGenerated ?
-          `<div class="recipe__user-generated">
-            <svg>
-              <use href="${this._icons}#icon-user"></use>
-            </svg>
-          </div>`
-          : ``
-        }
+        <div class="recipe__user-generated">
+          ${userGenerated
+            ? `<svg>
+                <use href="${this._icons}#icon-user"></use>
+              </svg>`
+            : ''
+          }
+        </div>
 
         <button class="btn--round btn--bookmark">
           <svg class="">
