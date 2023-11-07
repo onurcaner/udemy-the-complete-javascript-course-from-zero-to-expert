@@ -10,6 +10,12 @@ export const timeout = function (seconds) {
   });
 };
 
+/**
+ * Accessing Forkify API, does both GET and POST request based on recipe parameter
+ * @param {string} url
+ * @param {Object | undefined} [recipe] If defined, POSTs the recipe to DB
+ * @returns {Promise<Object>}
+ */
 export const fetchForkifyJSON = async function (url, recipe = undefined) {
   try {
     const response = recipe

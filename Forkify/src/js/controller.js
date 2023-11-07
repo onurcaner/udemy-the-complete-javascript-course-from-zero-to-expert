@@ -10,6 +10,7 @@ import addRecipeView from './views/addRecipeView.js';
 const Controller = class {
   #recipeID = '';
   #searchRecipes = { keyword: '', page: 0 };
+
   constructor() {
     console.log('Initializing the App');
     recipeView.addHandlerToOnHashChange(

@@ -24,6 +24,12 @@ const State = class {
   }
 
   /* Get */
+  /**
+   * Gets recipe details from DB by using the recipeID parameter.
+   * @param {string} recipeID
+   * @param {number | undefined} [servings] If defined, modifies the ingredients to match the servings
+   * @returns {Promise<Object>} Object with all recipe details
+   */
   async getRecipeDetails(recipeID, servings) {
     /* return recipe if it is inside the cached recipes */
     const recipe = this.#state.recipes.find(this.#isID(recipeID));
@@ -43,6 +49,12 @@ const State = class {
     }
   }
 
+  /**
+   * Gets recipes from DB by using the keyword parameter
+   * @param {string} keyword
+   * @param {number | undefined} [page=1]
+   * @returns {Promise<{keyword: string, results: Object[], pages: number}>} Slice of the limited recipe details
+   */
   async getSearchResults(keyword, page = 1) {
     /* return cached search results if keyword matches */
     if (keyword === this.#state.search.keyword) return this.#cloneSearch(page);
@@ -65,6 +77,10 @@ const State = class {
     }
   }
 
+  /**
+   * Gets recipes from localStorage
+   * @returns {Object[] | []}
+   */
   getBookmarkedRecipes() {
     const clonedBookmarks = this.#cloneBookmarkedRecipes();
     clonedBookmarks.forEach(this.#addCustomProperties.bind(this));
@@ -72,6 +88,12 @@ const State = class {
   }
 
   /* Post */
+  /**
+   * Posts formData to DB
+   * @requires FORKIFY_API_KEY from the config.js file
+   * @param {Object} formData
+   * @returns {Promise<Object>} recipe object from DB. The DB inserts the ID to the object
+   */
   async postRecipe(formData) {
     try {
       /* Convert formData into recipe that comes from database */
