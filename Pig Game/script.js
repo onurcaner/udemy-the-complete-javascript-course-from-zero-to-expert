@@ -131,7 +131,7 @@ const handleHold = (event) => {
 
   // if score is >=100 end the game
   // else switch players
-  if (gameData.totalScores[gameData.activePlayer] >= 10) {
+  if (gameData.totalScores[gameData.activePlayer] >= 100) {
     // logically end the game
     gameData.isEnded = true;
 
